@@ -33,7 +33,7 @@ librpm_la_SOURCES = \
 	rpmlead.c rpmlead.h rpmps.c rpmrc.c \
 	rpmte.c rpmte_internal.h rpmts.c \
 	rpmvercmp.c signature.c signature.h transaction.c \
-	verify.c rpmlock.c rpmlock.h misc.h \
+	filetriggers.c verify.c rpmlock.c rpmlock.h misc.h \
 	legacy.c merge.c \
 	rpmliblua.c rpmliblua.h
 if SQLITE3
