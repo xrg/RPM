@@ -1730,6 +1730,16 @@ assert(psm->mi == NULL);
 				NULL, NULL);
 
 	(void) rpmswExit(rpmtsOp(ts, RPMTS_OP_DBADD), 0);
+#if HAVE_SYSLOG_H
+        {
+	  char *s;
+
+	  s = headerFormat(fi->h, "%{NAME}-%{VERSION}-%{RELEASE}", NULL);
+	  syslog(LOG_NOTICE, "[RPM] %s installed\n", s);
+	  s = _free(s);
+	 }
+#endif
+
 	break;
     case PSM_RPMDB_REMOVE:
 	if (rpmtsFlags(ts) & RPMTRANS_FLAG_TEST)	break;
@@ -1737,6 +1747,15 @@ assert(psm->mi == NULL);
 	rc = rpmdbRemove(rpmtsGetRdb(ts), rpmtsGetTid(ts), fi->record,
 				NULL, NULL);
 	(void) rpmswExit(rpmtsOp(ts, RPMTS_OP_DBREMOVE), 0);
+#if HAVE_SYSLOG_H
+        {
+	  char *s;
+
+	  s = headerFormat(fi->h, "%{NAME}-%{VERSION}-%{RELEASE}", NULL);
+	  syslog(LOG_NOTICE, "[RPM] %s removed\n", s);
+	  s = _free(s);
+	}
+#endif
 	break;
 
     default:

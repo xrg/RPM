@@ -231,6 +231,12 @@ AC_SUBST(WITH_LZMA_LIB)
 #=================
 
 dnl
+dnl Checking syslog
+dnl
+
+AC_CHECK_HEADERS(syslog.h)
+
+dnl
 dnl Check for features
 dnl
 
