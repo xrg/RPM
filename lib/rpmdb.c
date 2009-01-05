@@ -553,6 +553,43 @@ static int dbiPruneSet(dbiIndexSet set, void * recs, int nrecs,
     return (numCopied == num);
 }
 
+
+/**
+ * Remove element(s) not in set of index database items.
+ * @param set		set of index database items
+ * @param set2		set of items that we must have
+ * @param sorted	set is already sorted?
+ * @return		0 success, 1 failure (no items found)
+ */
+static int dbiIntersectSet(dbiIndexSet set, dbiIndexSet set2, int sorted)
+	/*@modifies set, recs @*/
+{
+    int from;
+    int to = 0;
+    int num = set->count;
+    int numCopied = 0;
+
+     void * recs = set2->recs;
+     int nrecs = set2->count;
+     size_t recsize = sizeof(*set2->recs);
+
+assert(set->count > 0);
+    if (nrecs > 1 && !sorted)
+	qsort(recs, nrecs, recsize, hdrNumCmp);
+
+    for (from = 0; from < num; from++) {
+	if (!bsearch(&set->recs[from], recs, nrecs, recsize, hdrNumCmp)) {
+	    set->count--;
+	    continue;
+	}
+	if (from != to)
+	    set->recs[to] = set->recs[from]; /* structure assignment */
+	to++;
+	numCopied++;
+    }
+    return (numCopied == num);
+}
+
 /* XXX transaction.c */
 unsigned int dbiIndexSetCount(dbiIndexSet set) {
     return set->count;
@@ -2125,16 +2162,14 @@ static void rpmdbSortIterator(rpmdbMatchIterator mi)
 }
 
 /* LCL: segfault */
-static int rpmdbGrowIterator(rpmdbMatchIterator mi, int fpNum)
+static int rpmdbGet_dbiIndexSet(rpmdbMatchIterator mi, dbiIndexSet *set)
 {
     DBC * dbcursor;
     DBT * key;
     DBT * data;
     dbiIndex dbi = NULL;
-    dbiIndexSet set;
     int rc;
     int xx;
-    int i;
 
     if (mi == NULL)
 	return 1;
@@ -2168,15 +2203,23 @@ static int rpmdbGrowIterator(rpmdbMatchIterator mi, int fpNum)
 	return rc;
     }
 
-    set = NULL;
-    (void) dbt2set(dbi, data, &set);
-    for (i = 0; i < set->count; i++)
-	set->recs[i].fpNum = fpNum;
+    *set = NULL;
+    (void) dbt2set(dbi, data, set);
 
 #ifdef	SQLITE_HACK
     xx = dbiCclose(dbi, dbcursor, 0);
     dbcursor = NULL;
 #endif
+
+    return rc;
+}
+
+/* LCL: segfault */
+static void rpmdbGrowIterator(rpmdbMatchIterator mi, dbiIndexSet set, int fpNum)
+{
+    int i;
+    for (i = 0; i < set->count; i++)
+	set->recs[i].fpNum = fpNum;
 
     if (mi->mi_set == NULL) {
 	mi->mi_set = set;
@@ -2187,8 +2230,6 @@ static int rpmdbGrowIterator(rpmdbMatchIterator mi, int fpNum)
 	mi->mi_set->count += set->count;
 	set = dbiFreeIndexSet(set);
     }
-
-    return rc;
 }
 
 int rpmdbPruneIterator(rpmdbMatchIterator mi, int * hdrNums,
@@ -2920,13 +2961,24 @@ exit:
     return ret;
 }
 
+/* XXX "/" fixup. */
+static int at_least_one(int n)
+{
+    return n == 0 ? 1 : n;
+}
+
+static void set_mi_string_key(rpmdbMatchIterator mi, char *key)
+{
+    mi->mi_key.data = (void *) key;
+    mi->mi_key.size = at_least_one(strlen(key));
+}
+
 /* XXX transaction.c */
-int rpmdbFindFpList(rpmdb db, fingerPrint * fpList, dbiIndexSet * matchList, 
+int rpmdbFindList(rpmdb db, const char ** search_dirNames,
+		    const char ** search_baseNames, const uint32_t * search_dirIndexes, dbiIndexSet * matchList, 
 		    int numItems)
 {
-    DBT * key;
-    DBT * data;
-    rpmdbMatchIterator mi;
+    rpmdbMatchIterator mi, mi_dirs = NULL;
     fingerPrintCache fpc;
     Header h;
     int i, xx;
@@ -2937,22 +2989,46 @@ int rpmdbFindFpList(rpmdb db, fingerPrint * fpList, dbiIndexSet * matchList,
     if (mi == NULL)	/* XXX should  never happen */
 	return 1;
 
-    key = &mi->mi_key;
-    data = &mi->mi_data;
-
-    /* Gather all installed headers with matching basename's. */
     for (i = 0; i < numItems; i++) {
 
 	matchList[i] = xcalloc(1, sizeof(*(matchList[i])));
-
-	key->data = (void *) fpList[i].baseName;
-	key->size = strlen((char *)key->data);
-	if (key->size == 0) 
-	    key->size++;	/* XXX "/" fixup. */
-
-	xx = rpmdbGrowIterator(mi, i);
-
     }
+    /* Gather all installed headers with matching basename's. */
+    for (i = 0; i < numItems; i++) {
+	 set_mi_string_key(mi, (char *) search_baseNames[i]);
+
+	 dbiIndexSet set;
+	 if (rpmdbGet_dbiIndexSet(mi, &set) != 0) 
+	      continue; /* no match */
+
+	 if (set->count > 0) {
+	      if (!mi_dirs) mi_dirs = rpmdbInitIterator(db, RPMTAG_DIRNAMES, NULL, 0);
+
+	      if (mi_dirs == NULL) {	/* XXX should  never happen */
+		   set = dbiFreeIndexSet(set);
+		   return 1;
+	      }
+
+	      set_mi_string_key(mi_dirs, (char *) search_dirNames[search_dirIndexes[i]]);
+
+	      dbiIndexSet set2;
+	      if (rpmdbGet_dbiIndexSet(mi_dirs, &set2) != 0) {
+		   set = dbiFreeIndexSet(set);
+		   continue; /* no match */
+	      }
+
+	      dbiIntersectSet(set, set2, 0);
+
+	      dbiFreeIndexSet(set2);
+	 }
+
+	 if (set->count > 0)
+	      rpmdbGrowIterator(mi, set, i);
+	 else
+	      set = dbiFreeIndexSet(set);
+    }
+
+    if (mi_dirs) mi_dirs = rpmdbFreeIterator(mi_dirs);
 
     if ((i = rpmdbGetIteratorCount(mi)) == 0) {
 	mi = rpmdbFreeIterator(mi);
@@ -2973,7 +3049,6 @@ int rpmdbFindFpList(rpmdb db, fingerPrint * fpList, dbiIndexSet * matchList,
 	const char ** fullBaseNames;
 	uint32_t * dirIndexes;
 	uint32_t * fullDirIndexes;
-	fingerPrint * fps;
 	dbiIndexItem im;
 	int start;
 	int num;
@@ -3004,18 +3079,15 @@ int rpmdbFindFpList(rpmdb db, fingerPrint * fpList, dbiIndexSet * matchList,
 	    dirIndexes[i] = fullDirIndexes[im[i].tagNum];
 	}
 
-	fps = xcalloc(num, sizeof(*fps));
-	fpLookupList(fpc, dirNames, baseNames, dirIndexes, num, fps);
-
 	/* Add db (recnum,filenum) to list for fingerprint matches. */
 	for (i = 0; i < num; i++, im++) {
-	    /* FIX: fpList[].subDir may be NULL */
-	    if (!FP_EQUAL(fps[i], fpList[im->fpNum]))
+	    char *subDir = dirNames[dirIndexes[i]];
+
+	    if (strcmp(subDir, search_dirNames[search_dirIndexes[im->fpNum]]) != 0)
 		continue;
 	    xx = dbiAppendSet(matchList[im->fpNum], im, 1, sizeof(*im), 0);
 	}
 
-	fps = _free(fps);
 	rpmtdFreeData(&bnames);
 	rpmtdFreeData(&dnames);
 	rpmtdFreeData(&dindexes);

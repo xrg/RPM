@@ -74,7 +74,8 @@ extern "C" {
  * @return		0 always
  */
 RPM_GNUC_INTERNAL
-int rpmdbFindFpList(rpmdb db, fingerPrint  * fpList,
+int rpmdbFindList(rpmdb db, const char ** dirNames, 
+ 		  const char ** baseNames, const uint32_t * dirIndexes,
 		dbiIndexSet * matchList, int numItems);
 
 /* Be carefull with the memory... assert(*fullName == '/' || !scareMemory) */

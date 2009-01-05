@@ -1278,7 +1278,7 @@ int rpmtsRun(rpmts ts, rpmps okProbs, rpmprobFilterFlags ignoreSet)
 	(void) rpmswEnter(rpmtsOp(ts, RPMTS_OP_FINGERPRINT), 0);
 	/* Extract file info for all files in this package from the database. */
 	matches = xcalloc(fc, sizeof(*matches));
-	if (rpmdbFindFpList(rpmtsGetRdb(ts), fi->fps, matches, fc)) {
+	if (rpmdbFindList(rpmtsGetRdb(ts), fi->dnl, fi->bnl, fi->dil, matches, fc)) {
 	    ps = rpmpsFree(ps);
 	    rpmtsFreeLock(lock);
 	    return 1;	/* XXX WTFO? */
