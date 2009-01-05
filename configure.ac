@@ -305,19 +305,9 @@ AM_CONDITIONAL(LIBDWARF,[test "$WITH_LIBDWARF" = yes])
 
 #=================
 # Check for NSS library.
-# We need nss.h from NSS which needs nspr.h. Unfortunately both glibc and NSS 
-# have a header named nss.h... so make extra check for NSS's sechash.h 
-# which we use too and hopefully is slightly more unique to NSS.
-WITH_NSS_INCLUDE=
-WITH_NSS_LIB=
-AC_CHECK_HEADERS([nspr.h nss.h sechash.h], [], [
-  AC_MSG_ERROR([missing required NSPR / NSS header])
-])
-AC_CHECK_LIB(nss3, NSS_NoDB_Init, [
-  WITH_NSS_LIB=-lnss3
-], [
-  AC_MSG_ERROR([missing required NSS library 'nss3'])
-])
+# We need nss.h from NSS.
+WITH_NSS_INCLUDE=`pkg-config --cflags nss`
+WITH_NSS_LIB=`pkg-config --libs nss`
 AC_SUBST(WITH_NSS_INCLUDE)
 AC_SUBST(WITH_NSS_LIB)
 
