@@ -266,6 +266,11 @@ int main(int argc, char *argv[])
 	(void) poptReadConfigFile(optCon, poptfile);
 	free(poptfile);
     }
+    {
+	char *poptfile = rpmGenPath(rpmConfigDir(), LIBVENDORALIAS_FILENAME, NULL);
+	(void) poptReadConfigFile(optCon, poptfile);
+	free(poptfile);
+    }
     (void) poptReadDefaultConfig(optCon, 1);
     poptSetExecPath(optCon, rpmConfigDir(), 1);
 

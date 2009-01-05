@@ -417,7 +417,7 @@ static void setDefaults(void)
     const char *confdir = rpmConfigDir();
     if (!defrcfiles) {
 	defrcfiles = rstrscat(NULL, confdir, "/rpmrc", ":",
-				confdir, "/" RPMCANONVENDOR "/rpmrc", ":",
+				confdir, "/" "mageia" "/rpmrc", ":",
 				SYSCONFDIR "/rpmrc", ":",
 			  	"~/.rpmrc", NULL);
     }
