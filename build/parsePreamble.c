@@ -721,6 +721,7 @@ typedef const struct PreambleRec_s {
 
 #define LEN_AND_STR(_tag) (sizeof(_tag)-1), _tag
     {RPMTAG_EPOCH,		0, 0, 0, "serial"},
+    {RPMTAG_LICENSE,		0, 0, 0, "copyright"},
     {RPMTAG_SUGGESTSFLAGS,	0, 0, 0, "recommends"},
     {RPMTAG_SUGGESTSFLAGS,	0, 0, 0, "suggests"},
     {RPMTAG_ENHANCESFLAGS,	0, 0, 0, "supplements"},
