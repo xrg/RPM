@@ -9,6 +9,7 @@ static int _debug = 1;	/* XXX if < 0 debugging, > 0 unusual error returns */
 #if defined(HAVE_FTOK) && defined(HAVE_SYS_IPC_H)
 #include <sys/ipc.h>
 #endif
+#include <sys/file.h>
 
 #include <rpm/rpmtypes.h>
 #include <rpm/rpmmacro.h>
@@ -635,6 +636,100 @@ assert(db != NULL);
     return rc;
 }
 
+static int fcntl_SETLK(int fd, int operation)
+{
+    struct flock l;
+    memset(&l, 0, sizeof(l));
+    l.l_type = operation;
+    return flock(fd, operation | LOCK_NB);
+}
+static void clean_db_regions(const char *dbhome)
+{
+    rpmlog(RPMLOG_DEBUG, "cleaning db regions (ie db__* files) in %s\n", dbhome);
+  
+    char *filename = alloca(strlen(dbhome) + 40);
+    struct stat st;
+
+    int i;
+    for (i = 0; i < 16; i++) {
+        sprintf(filename, "%s/__db.%03d", dbhome, i);
+	(void)rpmCleanPath(filename);
+	if (stat(filename, &st) != 0) continue;
+	unlink(filename);
+    }
+}
+static int open_extra_lock(const char *dbhome)
+{
+    int fd = -1;
+    char *f = NULL;
+    if (asprintf(&f, "%s/__db.001", dbhome) != -1) {
+        fd = open(f, O_RDWR);
+	free(f);
+    }
+    return fd;
+}
+static void _acquire_extra_lock(int lock_fd)
+{
+    if (fcntl_SETLK(lock_fd, LOCK_SH) == 0)
+	rpmlog(RPMLOG_DEBUG, "acquire_extra_lock: locked %d\n", lock_fd);
+    else
+	rpmlog(RPMLOG_ERR, "acquire_extra: failed to lock extra lock: %s\n", strerror(errno));
+}
+static void release_and_close_extra_lock(int lock_fd)
+{
+    if (fcntl_SETLK(lock_fd, LOCK_UN) != 0) {
+	rpmlog(RPMLOG_ERR, "release_and_close_extra_lock: failed to unlock extra lock: %s\n", strerror(errno));
+    }
+    if (close(lock_fd) != 0) {
+	rpmlog(RPMLOG_ERR, "release_and_close_extra_lock: failed to close extra lock fd: %s\n", strerror(errno));
+    }
+}
+static int may_clean_db_regions(const char * dbhome, int lock_fd)
+{
+    if (fcntl_SETLK(lock_fd, LOCK_EX) == 0) {
+	/* cool, we are the only one, we can safely clean berkeley db regions */
+	/* this is useful in case the previous db access crashed and did not close the db correctly */
+	clean_db_regions(dbhome);
+	return 1;
+    } else
+	return 0;
+}
+static int acquire_extra_lock_or_clean_db_regions(const char *dbhome)
+{
+    int fd = open_extra_lock(dbhome);
+
+    if (fd == -1) {
+	/* that's ok */
+    } else if (may_clean_db_regions(dbhome, fd)) {
+	rpmlog(RPMLOG_WARNING, "cleaning stale lock\n");
+	release_and_close_extra_lock(fd);
+	fd = -1;
+    } else {
+	/* we are not the only user of rpmdb */
+	_acquire_extra_lock(fd);
+    }
+    return fd;
+}
+static int acquire_extra_lock(const char *dbhome)
+{
+    int fd = open_extra_lock(dbhome);
+
+    if (fd == -1) {
+	rpmlog(RPMLOG_ERR, "acquire_extra_lock: failed to open extra lock: %s\n", strerror(errno));
+    } else {
+	_acquire_extra_lock(fd);
+    }
+    return fd;
+}
+static void release_extra_lock_may_clean(const char *dbhome, int lock_fd)
+{
+    if (lock_fd != -1) {
+	rpmlog(RPMLOG_DEBUG, "release_extra_lock_may_clean(%s, %d)\n", dbhome, lock_fd);
+	may_clean_db_regions(dbhome, lock_fd);
+	release_and_close_extra_lock(lock_fd);
+    }
+}
+
 static int db3close(dbiIndex dbi, unsigned int flags)
 {
     rpmdb rpmdb = dbi->dbi_rpmdb;
@@ -685,6 +780,7 @@ static int db3close(dbiIndex dbi, unsigned int flags)
 
     if (rpmdb->db_dbenv != NULL && dbi->dbi_use_dbenv) {
 	if (rpmdb->db_opens == 1) {
+	    release_extra_lock_may_clean(dbhome, (int) ((DB_ENV *) rpmdb->db_dbenv)->app_private);
 	    xx = db_fini(dbi, (dbhome ? dbhome : ""), dbfile, dbsubfile);
 	    rpmdb->db_dbenv = NULL;
 	}
@@ -845,6 +941,7 @@ static int db3open(rpmdb rpmdb, rpmTag rpmtag, dbiIndex * dbip)
     /*
      * Avoid incompatible DB_CREATE/DB_RDONLY flags on DBENV->open.
      */
+    int extra_lock = -1;
     if (dbi->dbi_use_dbenv) {
 
 	if (access(dbhome, W_OK) == -1) {
@@ -876,6 +973,9 @@ static int db3open(rpmdb rpmdb, rpmTag rpmtag, dbiIndex * dbip)
 	    }
 
 	} else {	/* dbhome is writable, check for persistent dbenv. */
+	    if (rpmdb->db_dbenv == NULL)
+	        extra_lock = acquire_extra_lock_or_clean_db_regions(dbhome);
+
 	    char * dbf = rpmGetPath(dbhome, "/__db.001", NULL);
 
 	    if (access(dbf, F_OK) == -1) {
@@ -933,6 +1033,10 @@ static int db3open(rpmdb rpmdb, rpmTag rpmtag, dbiIndex * dbip)
 	    if (rc == 0) {
 		rpmdb->db_dbenv = dbenv;
 		rpmdb->db_opens = 1;
+
+		if (extra_lock == -1 && getuid() == 0)
+		    extra_lock = acquire_extra_lock(dbhome);
+	        dbenv->app_private = (void*) extra_lock;
 	    }
 	} else {
 	    dbenv = rpmdb->db_dbenv;
