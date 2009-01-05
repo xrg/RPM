@@ -9,6 +9,8 @@
 /* network byte order and is converted on the fly to host order. */
 
 #include "system.h"
+#include <iconv.h>
+#include <langinfo.h>
 
 #include <rpm/rpmtypes.h>
 #include <rpm/rpmstring.h>
@@ -1293,6 +1295,54 @@ static int headerMatchLocale(const char *td, const char *l, const char *le)
     return 0;
 }
 
+/** \ingroup header
+ * convert data to specific encoding used in the selected locale.
+ * @param td		header i18n table data, NUL terminated
+ * @param indata	original data
+ * @return		converted data(or original data if failed)
+ */
+static const char *headerIconv(const char *td,const char *indata)
+{
+  char *tcode=NULL;
+  char *fcode=NULL;
+
+  if( strstr(td,".") != NULL ){
+    fcode=strchr(td,'.')+1;
+    tcode=nl_langinfo(CODESET);
+    if( tcode!=NULL && *tcode != '\0' && strcasecmp(fcode,tcode) != 0 ){
+//      fprintf(stderr,"%s:fcode=%s,tcode=%s\n",__func__,fcode,tcode);
+      iconv_t conv = iconv_open(tcode,fcode);
+      if (conv != (iconv_t)-1) {
+        char *inp = indata;
+	char *outp,*outdata;
+	size_t inleft = strlen(indata);
+	size_t outleft;
+	size_t outdata_size = (inleft+1)*2;
+	outp = outdata = calloc(1,outdata_size);
+	outleft = outdata_size - 1;
+        int status = E2BIG;
+
+        while (inleft > 0 && status == E2BIG) {
+          iconv(conv, &inp, &inleft, &outp, &outleft);
+          status = errno;
+	  size_t used = outp-outdata;
+	  char *newdest;
+	  outdata_size *=2;
+	  newdest = realloc(outdata,outdata_size);
+	  if(newdest==NULL) break;
+	  outdata = newdest;
+	  outp = outdata+used;
+	  outleft = outdata_size - used - 1;
+          *outp = '\0';	
+        }
+        iconv_close(conv);
+	return outdata;
+      }
+    }
+  }
+  return strdup(indata);
+}
+
 /**
  * Return i18n string from header that matches locale.
  * @param h		header
@@ -1324,7 +1374,7 @@ static int copyI18NEntry(Header h, indexEntry entry, rpmtd td,
 
     for (l = lang; *l != '\0'; l = le) {
 	const char *t;
-	char *ed, *ed_weak = NULL;
+	char *ed, *ed_weak = NULL, *t_weak = NULL;
 	int langNum;
 
 	while (*l && *l == ':')			/* skip leading colons */
@@ -1341,24 +1391,20 @@ static int copyI18NEntry(Header h, indexEntry entry, rpmtd td,
 
 	    int match = headerMatchLocale(t, l, le);
 	    if (match == 1) {
-		td->data = ed;
+	        td->data = headerIconv(t, ed);
 		goto exit;
 	    } else if (match == 2) { 
 		ed_weak = ed;
+	        t_weak = t;
 	    }
 	}
 	if (ed_weak) {
-	    td->data = ed_weak;
+	    td->data = headerIconv(t_weak, ed_weak);
 	    goto exit;
 	}
     }
 
 exit:
-    if (flags & HEADERGET_ALLOC) {
-	td->data = xstrdup(td->data);
-	td->flags |= RPMTD_ALLOCED;
-    }
-
     return 1;
 }
 
