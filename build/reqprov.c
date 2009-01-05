@@ -43,6 +43,16 @@ int addReqProv(rpmSpec spec, Header h, rpmTag tagN,
 	flagtag = RPMTAG_TRIGGERFLAGS;
 	indextag = RPMTAG_TRIGGERINDEX;
 	extra = Flags & RPMSENSE_TRIGGER;
+    } else if (tagN == RPMTAG_SUGGESTSFLAGS) {
+	nametag = RPMTAG_SUGGESTSNAME;
+	versiontag = RPMTAG_SUGGESTSVERSION;
+	flagtag = RPMTAG_SUGGESTSFLAGS;
+	extra = Flags & _ALL_REQUIRES_MASK;
+    } else if (tagN == RPMTAG_ENHANCESFLAGS) {
+	nametag = RPMTAG_ENHANCESNAME;
+	versiontag = RPMTAG_ENHANCESVERSION;
+	flagtag = RPMTAG_ENHANCESFLAGS;
+	extra = Flags & _ALL_REQUIRES_MASK;
     } else {
 	nametag = RPMTAG_REQUIRENAME;
 	versiontag = RPMTAG_REQUIREVERSION;

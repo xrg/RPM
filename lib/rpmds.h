@@ -56,7 +56,7 @@ typedef	enum rpmsenseFlags_e {
     RPMSENSE_RPMLIB = ((1 << 24) | RPMSENSE_PREREQ), /*!< rpmlib(feature) dependency. */
     RPMSENSE_TRIGGERPREIN = (1 << 25),	/*!< %triggerprein dependency. */
     RPMSENSE_KEYRING	= (1 << 26),
-    RPMSENSE_PATCHES	= (1 << 27),
+    RPMSENSE_STRONG	= (1 << 27),
     RPMSENSE_CONFIG	= (1 << 28)
 } rpmsenseFlags;
 
@@ -74,6 +74,7 @@ typedef	enum rpmsenseFlags_e {
     RPMSENSE_SCRIPT_POSTUN | \
     RPMSENSE_SCRIPT_VERIFY | \
     RPMSENSE_FIND_REQUIRES | \
+    RPMSENSE_STRONG | \
     RPMSENSE_SCRIPT_PREP | \
     RPMSENSE_SCRIPT_BUILD | \
     RPMSENSE_SCRIPT_INSTALL | \

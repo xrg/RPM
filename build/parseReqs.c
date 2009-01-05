@@ -86,6 +86,10 @@ rpmRC parseRCPOT(rpmSpec spec, Package pkg, const char *field, rpmTag tagN,
 	tagflags |= RPMSENSE_ANY;
 	h = spec->buildRestrictions;
 	break;
+    case RPMTAG_SUGGESTSFLAGS:
+    case RPMTAG_ENHANCESFLAGS:
+	h = pkg->header;
+	break;
     default:
     case RPMTAG_REQUIREFLAGS:
 	tagflags |= RPMSENSE_ANY;
