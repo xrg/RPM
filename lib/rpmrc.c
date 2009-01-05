@@ -427,6 +427,7 @@ static void setDefaults(void)
 	macrofiles = rstrscat(NULL, confdir, "/macros", ":",
 				confdir, "/platform/%{_target}/macros", ":",
   				confdir, "/" RPMCANONVENDOR "/macros", ":",
+				SYSCONFDIR "/rpm/macros.d/*.macros", ":",
 				SYSCONFDIR "/rpm/macros.*", ":",
 				SYSCONFDIR "/rpm/macros", ":",
 				SYSCONFDIR "/rpm/%{_target}/macros", ":",
