@@ -56,6 +56,22 @@ static int sharedCmp(const void * one, const void * two)
     return 0;
 }
 
+static int is_a_doc_conflict(rpmfi fi)
+{
+    const char *ignorelist[] = {
+	"/usr/share/man/",
+	"/usr/share/gtk-doc/html/",
+	"/usr/share/gnome/html/",
+	NULL
+    };
+    const char *fn = rpmfiFN(fi);
+    const char **dnp;
+    for (dnp = ignorelist; *dnp != NULL; dnp++)
+	if (strstr(fn, *dnp) == fn) return 1;
+
+    return 0;
+}
+
 /**
  * handleInstInstalledFiles.
  * @param ts		transaction set
@@ -160,6 +176,13 @@ static int handleInstInstalledFiles(const rpmts ts,
 		    fi->actions[fileNum] = FA_CREATE;
 		    rConflicts = 0;
 		}
+	    }
+
+	    /* HACK: always install latest (arch-independent) man
+	       pages and gtk/gnome html doc files. */
+	    if (rConflicts && is_a_doc_conflict(fi)) {
+	        fi->actions[fileNum] = FA_CREATE;
+		rConflicts = 0;
 	    }
 
 	    if (rConflicts) {
@@ -516,6 +539,13 @@ assert(otherFi != NULL);
 			rConflicts = 0;
 		    }
 		    done = 1;
+		}
+
+		/* HACK: always install latest (arch-independent) man
+		   pages and gtk/gnome html doc files. */
+		if (rConflicts && is_a_doc_conflict(fi)) {
+		    fi->actions[i] = FA_CREATE;
+		    rConflicts = 0;
 		}
 
 		if (rConflicts) {
