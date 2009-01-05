@@ -175,6 +175,8 @@ static PyMethodDef rpmModuleMethods[] = {
 	NULL },
     { "expandMacro", (PyCFunction) rpmmacro_ExpandMacro, METH_VARARGS|METH_KEYWORDS,
 	NULL },
+    { "writeHeaderListToFile", (PyCFunction) rpmHeaderToFile, METH_VARARGS,
+        NULL },
 
     { "archscore", (PyCFunction) archScore, METH_VARARGS|METH_KEYWORDS,
 	NULL },

@@ -30,6 +30,7 @@ int rpmMergeHeaders(PyObject * list, FD_t fd, int matchTag);
 PyObject * rpmHeaderFromFile(PyObject * self, PyObject * args, PyObject * kwds);
 PyObject * rpmHeaderFromFD(PyObject * self, PyObject * args, PyObject * kwds);
 PyObject * rpmSingleHeaderFromFD(PyObject * self, PyObject * args, PyObject * kwds);
+PyObject * rpmHeaderToFile(PyObject * self, PyObject * args);
 PyObject * rpmReadHeaders (FD_t fd);
 PyObject * hdrLoad(PyObject * self, PyObject * args, PyObject * kwds);
 

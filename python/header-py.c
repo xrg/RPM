@@ -762,6 +762,34 @@ rpmMergeHeadersFromFD(PyObject * self, PyObject * args, PyObject * kwds)
     return Py_None;
 }
 
+int WriteHeaders(PyObject *hdlist,char *filename)
+{
+  hdrObject *hdr;
+  FD_t  outfdt=0;
+  int   count;
+  
+  outfdt = Fopen(filename, "w.fdio");
+  if ((!outfdt)||(Fileno(outfdt)<0)) return(-1);
+
+  for(count=0;count<PyList_Size(hdlist);count++){
+    hdr = (hdrObject *)PyList_GetItem(hdlist, count);
+    headerWrite(outfdt,hdr->h,HEADER_MAGIC_YES);
+  }
+  Fclose(outfdt);
+  return(0);
+}
+
+PyObject * rpmHeaderToFile(PyObject * self, PyObject * args)
+{
+  PyObject  *hdlist;
+  char  *filename;
+  int ret;
+
+  if (!PyArg_ParseTuple(args,"Os",&hdlist,&filename)) return NULL;
+  ret = WriteHeaders(hdlist,filename);
+  return(Py_BuildValue("i",ret));
+}
+
 /**
  */
 PyObject *
