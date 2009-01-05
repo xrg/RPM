@@ -35,6 +35,7 @@ const char * macrofiles =
       RPMCONFIGDIR "/macros"
   ":" RPMCONFIGDIR "/platform/%{_target}/macros"
   ":" RPMCONFIGDIR "/" RPMCANONVENDOR "/macros"
+  ":" SYSCONFDIR "/rpm/macros.d/*.macros"
   ":" SYSCONFDIR "/rpm/macros.*"
   ":" SYSCONFDIR "/rpm/macros"
   ":" SYSCONFDIR "/rpm/%{_target}/macros"
