@@ -281,6 +281,21 @@ static uint64_t countFiles(rpmts ts)
     return fc;
 }
 
+static int is_a_doc_conflict(const char *fn)
+{
+    const char *ignorelist[] = {
+       "/usr/share/man/",
+       "/usr/share/gtk-doc/html/",
+       "/usr/share/gnome/html/",
+       NULL
+    };
+    const char **dnp;
+    for (dnp = ignorelist; *dnp != NULL; dnp++)
+       if (strstr(fn, *dnp) == fn) return 1;
+
+    return 0;
+}
+
 /**
  * handleInstInstalledFiles.
  * @param ts		transaction set
@@ -322,9 +337,18 @@ static void handleInstInstalledFile(const rpmts ts, rpmte p, rpmfi fi, int fx,
 	    }
 	}
 
+	char *fn;
+	if (rConflicts)
+	    fn = rpmfiFNIndex(fi, fx);
+	/* HACK: always install latest (arch-independent) man
+	   pages and gtk/gnome html doc files. */
+	if (rConflicts && is_a_doc_conflict(fn)) {
+	    rpmfsSetAction(fs, fx, FA_CREATE);
+	    rConflicts = 0;
+	}
+
 	if (rConflicts) {
 	    char *altNEVR = headerGetAsString(otherHeader, RPMTAG_NEVRA);
-	    char *fn = rpmfiFNIndex(fi, fx);
 	    rpmteAddProblem(p, RPMPROB_FILE_CONFLICT, altNEVR, fn,
 			    headerGetInstance(otherHeader));
 	    free(fn);
@@ -494,8 +518,18 @@ assert(otherFi != NULL);
 		    }
 		    done = 1;
 		}
+
+		char *fn;
+		if (rConflicts)
+		    fn = rpmfiFNIndex(fi, i);
+		/* HACK: always install latest (arch-independent) man
+		   pages and gtk/gnome html doc files. */
+		if (rConflicts && is_a_doc_conflict(fn)) {
+		    rpmfsSetAction(fs, i, FA_CREATE);
+		    rConflicts = 0;
+		}
+
 		if (rConflicts) {
-		    char *fn = rpmfiFNIndex(fi, i);
 		    rpmteAddProblem(p, RPMPROB_NEW_FILE_CONFLICT,
 				    rpmteNEVRA(otherTe), fn, 0);
 		    free(fn);
