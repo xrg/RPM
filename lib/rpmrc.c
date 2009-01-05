@@ -438,6 +438,7 @@ static void setDefaults(void)
 				confdir, "/platform/%{_target}/macros", ":",
 				confdir, "/fileattrs/*.attr", ":",
   				confdir, "/" RPMCANONVENDOR "/macros", ":",
+				SYSCONFDIR "/rpm/macros.d/*.macros", ":",
 				SYSCONFDIR "/rpm/macros.*", ":",
 				SYSCONFDIR "/rpm/macros", ":",
 				SYSCONFDIR "/rpm/%{_target}/macros", ":",
