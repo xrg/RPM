@@ -32,6 +32,11 @@ const char * uidToUname(uid_t uid);
 RPM_GNUC_INTERNAL
 const char * gidToGname(gid_t gid);
 
+__attribute__ ((visibility("hidden")))
+  int mayAddToFilesAwaitingFiletriggers(const char *rootDir, rpmfi fi, int install_or_erase);
+
+void rpmRunFileTriggers(const char *rootDir);
+
 #ifdef __cplusplus
 }
 #endif

@@ -1546,6 +1546,9 @@ int rpmtsRun(rpmts ts, rpmps okProbs, rpmprobFilterFlags ignoreSet)
 		if (rpmpsmStage(psm, PSM_PKGINSTALL)) {
 		    ourrc++;
 		    lastFailKey = pkgKey;
+		} else {
+		    if (!(rpmtsFlags(ts) & RPMTRANS_FLAG_TEST))
+			mayAddToFilesAwaitingFiletriggers(rpmtsRootDir(ts), p->fi, 1);
 		}
 		
 	    } else {
@@ -1579,6 +1582,9 @@ int rpmtsRun(rpmts ts, rpmps okProbs, rpmprobFilterFlags ignoreSet)
 		if (rpmpsmStage(psm, PSM_PKGERASE)) {
 		    ourrc++;
 		}
+	    } else {
+		if (!(rpmtsFlags(ts) & RPMTRANS_FLAG_TEST))
+		    mayAddToFilesAwaitingFiletriggers(rpmtsRootDir(ts), p->fi, 0);
 	    }
 
 	    (void) rpmswExit(rpmtsOp(ts, RPMTS_OP_ERASE), 0);
@@ -1599,6 +1605,10 @@ int rpmtsRun(rpmts ts, rpmps okProbs, rpmprobFilterFlags ignoreSet)
     pi = rpmtsiFree(pi);
 
     if (!(rpmtsFlags(ts) & (RPMTRANS_FLAG_TEST|RPMTRANS_FLAG_NOPOST))) {
+
+	if ((rpmtsFlags(ts) & _noTransTriggers) != _noTransTriggers)
+	     rpmRunFileTriggers(rpmtsRootDir(ts));
+
 	rpmlog(RPMLOG_DEBUG, "running post-transaction scripts\n");
 	runTransScripts(ts, RPMTAG_POSTTRANS);
     }
