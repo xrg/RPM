@@ -1194,6 +1194,8 @@ done \
 %__urlhelper_proxyopts   %{?_httpproxy:--proxy %{_httpproxy}%{?_httpport::%{_httpport}}}%{!?_httpproxy:%{nil}}
 %_urlhelper             %{__urlhelpercmd} %{?__urlhelper_localopts} %{?__urlhelper_proxyopts} %{__urlhelperopts}
 
+# Syslog support when installing/removing rpms
+%_use_syslog  1
 
 # \endverbatim
 #*/
