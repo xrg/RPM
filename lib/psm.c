@@ -789,16 +789,14 @@ static rpmRC rpmpsmStage(rpmpsm psm, pkgStage stage)
 
 	    if (!(rpmtsFlags(ts) & RPMTRANS_FLAG_NOTRIGGERUN)) {
 		/* Run triggers in this package other package(s) set off. */
-		rc = rpmpsmNext(psm, PSM_IMMED_TRIGGERS);
-		if (rc) break;
+		rpmpsmNext(psm, PSM_IMMED_TRIGGERS);
 
 		/* Run triggers in other package(s) this package sets off. */
-		rc = rpmpsmNext(psm, PSM_TRIGGERS);
-		if (rc) break;
+		rpmpsmNext(psm, PSM_TRIGGERS);
 	    }
 
 	    if (!(rpmtsFlags(ts) & RPMTRANS_FLAG_NOPREUN))
-		rc = rpmpsmNext(psm, PSM_SCRIPT);
+		rpmpsmNext(psm, PSM_SCRIPT);
 	}
 	break;
     case PSM_PROCESS:
@@ -896,17 +894,14 @@ static rpmRC rpmpsmStage(rpmpsm psm, pkgStage stage)
 	    psm->countCorrection = 0;
 
 	    if (!(rpmtsFlags(ts) & RPMTRANS_FLAG_NOPOST)) {
-		rc = rpmpsmNext(psm, PSM_SCRIPT);
-		if (rc) break;
+		rpmpsmNext(psm, PSM_SCRIPT);
 	    }
 	    if (!(rpmtsFlags(ts) & RPMTRANS_FLAG_NOTRIGGERIN)) {
 		/* Run triggers in other package(s) this package sets off. */
-		rc = rpmpsmNext(psm, PSM_TRIGGERS);
-		if (rc) break;
+		rpmpsmNext(psm, PSM_TRIGGERS);
 
 		/* Run triggers in this package other package(s) set off. */
-		rc = rpmpsmNext(psm, PSM_IMMED_TRIGGERS);
-		if (rc) break;
+		rpmpsmNext(psm, PSM_IMMED_TRIGGERS);
 	    }
 
 	    rc = markReplacedFiles(psm);
@@ -919,14 +914,12 @@ static rpmRC rpmpsmStage(rpmpsm psm, pkgStage stage)
 	    psm->countCorrection = -1;
 
 	    if (!(rpmtsFlags(ts) & RPMTRANS_FLAG_NOPOSTUN)) {
-		rc = rpmpsmNext(psm, PSM_SCRIPT);
-		if (rc) break;
+		rpmpsmNext(psm, PSM_SCRIPT);
 	    }
 
 	    if (!(rpmtsFlags(ts) & RPMTRANS_FLAG_NOTRIGGERPOSTUN)) {
 		/* Run triggers in other package(s) this package sets off. */
-		rc = rpmpsmNext(psm, PSM_TRIGGERS);
-		if (rc) break;
+		rpmpsmNext(psm, PSM_TRIGGERS);
 	    }
 
 	    rc = rpmpsmNext(psm, PSM_RPMDB_REMOVE);
