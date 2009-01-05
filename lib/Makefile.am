@@ -11,6 +11,7 @@ AM_CPPFLAGS += -DSYSCONFDIR="\"$(sysconfdir)\""
 AM_CPPFLAGS += -DLOCALSTATEDIR="\"$(localstatedir)\""
 AM_CPPFLAGS += -DLIBRPMALIAS_FILENAME="\"rpmpopt-${VERSION}\""
 AM_CPPFLAGS += -DLIBRPMALIAS_EXECPATH="\"$(bindir)\""
+AM_CPPFLAGS += -DLIBVENDORALIAS_FILENAME="\"mageia/rpmpopt\""
 
 usrlibdir = $(libdir)
 

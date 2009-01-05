@@ -46,6 +46,7 @@ AM_CPPFLAGS += @WITH_POPT_INCLUDE@
 AM_CPPFLAGS += -I$(top_srcdir)/misc
 AM_CPPFLAGS += -DLOCALEDIR="\"$(localedir)\""
 AM_CPPFLAGS += -DLIBRPMALIAS_FILENAME="\"rpmpopt-${VERSION}\""
+AM_CPPFLAGS += -DLIBVENDORALIAS_FILENAME="\"mageia/rpmpopt\""
 
 pkginclude_HEADERS =
 nodist_pkginclude_HEADERS =
