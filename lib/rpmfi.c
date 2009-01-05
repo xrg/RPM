@@ -472,6 +472,9 @@ int rpmfiCompare(const rpmfi afi, const rpmfi bfi)
     if ((rpmfiFFlags(afi) & RPMFILE_GHOST) ||
 	(rpmfiFFlags(bfi) & RPMFILE_GHOST)) return 0;
 
+    if ((rpmfiFFlags(afi) & RPMFILE_GHOST) ||
+	(rpmfiFFlags(bfi) & RPMFILE_GHOST)) return 0;
+
     if (awhat != bwhat) return 1;
 
     if (awhat == LINK) {
