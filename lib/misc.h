@@ -36,6 +36,11 @@ headerTagFormatFunction rpmHeaderFormatFuncByName(const char *fmt);
 RPM_GNUC_INTERNAL
 headerTagFormatFunction rpmHeaderFormatFuncByValue(rpmtdFormats fmt);
 
+__attribute__ ((visibility("hidden")))
+  int mayAddToFilesAwaitingFiletriggers(const char *rootDir, rpmfi fi, int install_or_erase);
+
+void rpmRunFileTriggers(const char *rootDir);
+
 #ifdef __cplusplus
 }
 #endif

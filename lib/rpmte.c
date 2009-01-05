@@ -935,7 +935,7 @@ int rpmteProcess(rpmte te, pkgGoal goal)
 
     if (rpmteOpen(te, reset_fi)) {
 	failed = rpmpsmRun(te->ts, te, goal);
-	rpmteClose(te, reset_fi);
+	rpmteClose(te, 0);
     }
     
     if (!scriptstage) {

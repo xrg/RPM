@@ -1403,6 +1403,7 @@ static int rpmtsProcess(rpmts ts)
     pi = rpmtsiInit(ts);
     while ((p = rpmtsiNext(pi, 0)) != NULL) {
 	int failed;
+	rpmElementType tetype = rpmteType(p);
 
 	rpmlog(RPMLOG_DEBUG, "========== +++ %s %s-%s 0x%x\n",
 		rpmteNEVR(p), rpmteA(p), rpmteO(p), rpmteColor(p));
@@ -1416,6 +1417,14 @@ static int rpmtsProcess(rpmts ts)
 	    rpmlog(RPMLOG_ERR, "%s: %s %s\n", rpmteNEVRA(p),
 		   rpmteTypeString(p), failed > 1 ? _("skipped") : _("failed"));
 	    rc++;
+           rpmteSetFI(p, NULL);
+       } else {
+           if (!(rpmtsFlags(ts) & RPMTRANS_FLAG_TEST)) {
+               int install_or_erase = (tetype == TR_ADDED)?1:0;
+               mayAddToFilesAwaitingFiletriggers(rpmtsRootDir(ts), rpmteFI(p),
+                                                 install_or_erase);
+           }
+           rpmteSetFI(p, NULL);
 	}
 	(void) rpmdbSync(rpmtsGetRdb(ts));
     }
@@ -1486,6 +1495,9 @@ int rpmtsRun(rpmts ts, rpmps okProbs, rpmprobFilterFlags ignoreSet)
 
     /* Run post-transaction scripts unless disabled */
     if (!(rpmtsFlags(ts) & (RPMTRANS_FLAG_NOPOST))) {
+       if ((rpmtsFlags(ts) & _noTransTriggers) != _noTransTriggers) {
+           rpmRunFileTriggers(rpmtsRootDir(ts));
+       }
 	rpmlog(RPMLOG_DEBUG, "running post-transaction scripts\n");
 	runTransScripts(ts, PKG_POSTTRANS);
     }
