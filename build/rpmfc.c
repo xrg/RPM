@@ -1084,6 +1084,12 @@ static struct DepMsg_s depMsgs[] = {
   { "Obsoletes",	{ "%{?__find_obsoletes}", NULL, NULL, NULL },
 	RPMTAG_OBSOLETENAME, RPMTAG_OBSOLETEVERSION, RPMTAG_OBSOLETEFLAGS,
 	0, -1 },
+  { "Enhances",		{ "%{?__find_enhances}", NULL, NULL, NULL },
+	RPMTAG_ENHANCESNAME, RPMTAG_ENHANCESVERSION, RPMTAG_ENHANCESFLAGS,
+	RPMSENSE_STRONG, RPMSENSE_STRONG },
+  { "Supplements",	{ "%{?__find_supplements}", NULL, NULL, NULL },
+	RPMTAG_ENHANCESNAME, RPMTAG_ENHANCESVERSION, RPMTAG_ENHANCESFLAGS,
+	RPMSENSE_STRONG, 0 },
   { NULL,		{ NULL, NULL, NULL, NULL },	0, 0, 0, 0, 0 }
 };
 
@@ -1159,6 +1165,14 @@ static rpmRC rpmfcGenerateDependsHelper(const rpmSpec spec, Package pkg, rpmfi f
 	    if (!pkg->autoReq)
 		continue;
 	    tagflags = RPMSENSE_FIND_REQUIRES;
+	    break;
+	case RPMTAG_ENHANCESFLAGS:
+	    if (!pkg->autoProv)
+		continue;
+	    failnonzero = 0;
+	    tagflags = RPMSENSE_FIND_REQUIRES | RPMSENSE_MISSINGOK;
+	    if (strcmp(dm->msg, "Supplements") == 0)
+		tagflags |= RPMSENSE_STRONG;
 	    break;
 	default:
 	    continue;
