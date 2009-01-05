@@ -432,6 +432,69 @@ void closeSpec(rpmSpec spec)
 	ofi = _free(ofi);
     }
 }
+static const char *_headerName(Header h)
+{
+  const char *s;
+  (void) headerNVR(h, &s, NULL, NULL);
+  return s;
+}
+
+static const char *_headerRelease(Header h)
+{
+  const char *s;
+  (void) headerNVR(h, NULL, NULL, &s);
+  return s;
+}
+
+static int checkNonPackagedRPM(Header h, int is_main_subpackage)
+{
+    int res = 0;
+    struct rpmtd_s td;
+
+    /* those checks are Mandriva only (May 2008),
+       and must not break non Mandriva packages */    
+    if (strstr(_headerRelease(h), "mdv") == 0) return 0;
+
+    /* Check that no %pre, %post ... do not exist in this header, since they will be dropped */
+    HeaderIterator hi = headerInitIterator(h);
+    while (headerNext(hi, &td)) {
+      int tag = rpmtdTag(&td);
+      switch (tag) {
+      case RPMTAG_PREIN:
+      case RPMTAG_POSTIN:
+      case RPMTAG_PREUN:
+      case RPMTAG_POSTUN:
+      case RPMTAG_PREINPROG:
+      case RPMTAG_POSTINPROG:
+      case RPMTAG_PREUNPROG:
+      case RPMTAG_POSTUNPROG:
+      case RPMTAG_TRIGGERIN:
+      case RPMTAG_TRIGGERUN:
+      case RPMTAG_TRIGGERPOSTUN:
+
+	rpmlog(RPMLOG_ERR, _("Useless %%%s on non existant binary package \"%s\"\n"),
+		 rpmTagGetName(tag), _headerName(h));
+	res = 1;
+      }
+      rpmtdFreeData(&td);
+    }
+    hi = headerFreeIterator(hi);
+
+    if (!is_main_subpackage) {
+	 /* "%files foo" for subpackages is now mandatory */
+	 /* (otherwise what's the use creating the subpackage in the first place) */
+
+	 /* we must skip the *-__restore__ fake subpackage used after *-debug subpackage */
+	 if (strstr(_headerName(h), "__restore__") == NULL) {
+	      rpmlog(RPMLOG_ERR, _("Missing %%files for subpackage %s\n"),
+		       _headerName(h));
+	      res = 1;
+	 }
+    }
+
+
+    return res && rpmExpandNumeric("%{?_missing_subpackage_terminate_build}");
+}
 
 extern int noLang;		/* XXX FIXME: pass as arg */
 
@@ -602,6 +665,9 @@ int parseSpec(rpmts ts, const char *specFile, const char *rootDir,
 	    const char * name;
 	    (void) headerNVR(pkg->header, &name, NULL, NULL);
 	    rpmlog(RPMLOG_ERR, _("Package has no %%description: %s\n"), name);
+	    goto errxit;
+	}
+	if (!pkg->fileList && checkNonPackagedRPM(pkg->header, pkg == spec->packages)) {
 	    goto errxit;
 	}
 
