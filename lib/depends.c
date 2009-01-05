@@ -343,7 +343,7 @@ addheader:
 	     * If no obsoletes version info is available, match all names.
 	     */
 	    if (rpmdsEVR(obsoletes) == NULL
-	     || rpmdsAnyMatchesDep(oh, obsoletes, _rpmds_nopromote)) {
+	     || rpmdsNVRMatchesDep(oh, obsoletes, _rpmds_nopromote)) {
 		char * ohNEVRA = headerGetNEVRA(oh, NULL);
 #ifdef	DYING	/* XXX see http://bugzilla.redhat.com #134497 */
 		if (rpmVersionCompare(h, oh))
