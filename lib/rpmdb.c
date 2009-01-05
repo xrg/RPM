@@ -2920,31 +2920,6 @@ exit:
     return ret;
 }
 
-#define _skip(_dn)	{ sizeof(_dn)-1, (_dn) }
-
-static struct skipDir_s {
-    int dnlen;
-    const char * dn;
-} skipDirs[] = {
-    { 0, NULL }
-};
-
-static int skipDir(const char * dn)
-{
-    struct skipDir_s * sd = skipDirs;
-    int dnlen;
-
-    dnlen = strlen(dn);
-    for (sd = skipDirs; sd->dn != NULL; sd++) {
-	if (dnlen < sd->dnlen)
-	    continue;
-	if (strncmp(dn, sd->dn, sd->dnlen))
-	    continue;
-	return 1;
-    }
-    return 0;
-}
-
 /* XXX transaction.c */
 int rpmdbFindFpList(rpmdb db, fingerPrint * fpList, dbiIndexSet * matchList, 
 		    int numItems)
@@ -2974,9 +2949,6 @@ int rpmdbFindFpList(rpmdb db, fingerPrint * fpList, dbiIndexSet * matchList,
 	key->size = strlen((char *)key->data);
 	if (key->size == 0) 
 	    key->size++;	/* XXX "/" fixup. */
-
-	if (skipDir(fpList[i].entry->dirName))
-	    continue;
 
 	xx = rpmdbGrowIterator(mi, i);
 
