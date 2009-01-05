@@ -163,6 +163,10 @@ rpmRC doScript(rpmSpec spec, rpmBuildFlags what, const char *name,
 	/* NSPR messes with SIGPIPE, reset to default for the kids */
 	signal(SIGPIPE, SIG_DFL);
 	errno = 0;
+	setenv ("LANG", "C", 1);
+	unsetenv ("LC_ALL");
+	unsetenv ("LANGUAGE");
+	unsetenv ("LINGUAS");
 	(void) execvp(argv[0], (char *const *)argv);
 
 	rpmlog(RPMLOG_ERR, _("Exec of %s failed (%s): %s\n"),
