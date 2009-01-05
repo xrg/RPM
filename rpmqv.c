@@ -664,14 +664,16 @@ int main(int argc, char *argv[])
 	case 'b':
 	    ba->buildAmount |= RPMBUILD_PACKAGEBINARY;
 	    ba->buildAmount |= RPMBUILD_CLEAN;
+	    if (ba->shortCircuit)
+		break;
 	case 'i':
 	    ba->buildAmount |= RPMBUILD_INSTALL;
 	    ba->buildAmount |= RPMBUILD_CHECK;
-	    if ((ba->buildChar == 'i') && ba->shortCircuit)
+	    if (/* (ba->buildChar == 'i') && */ ba->shortCircuit)
 		break;
 	case 'c':
 	    ba->buildAmount |= RPMBUILD_BUILD;
-	    if ((ba->buildChar == 'c') && ba->shortCircuit)
+	    if (/* (ba->buildChar == 'c') && */ ba->shortCircuit)
 		break;
 	case 'p':
 	    ba->buildAmount |= RPMBUILD_PREP;
