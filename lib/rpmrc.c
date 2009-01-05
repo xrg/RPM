@@ -26,7 +26,7 @@
 
 static const char * const defrcfiles = 
       RPMCONFIGDIR "/rpmrc" 
-  ":" RPMCONFIGDIR "/" RPMCANONVENDOR "/rpmrc"
+  ":" RPMCONFIGDIR "/" "manbo" "/rpmrc"
   ":" SYSCONFDIR "/rpmrc"
   ":~/.rpmrc"; 
 

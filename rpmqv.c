@@ -262,6 +262,7 @@ int main(int argc, char *argv[])
     /* XXX popt argv definition should be fixed instead of casting... */
     optCon = poptGetContext(poptCtx, argc, (const char **)argv, optionsTable, 0);
     (void) poptReadConfigFile(optCon, LIBRPMALIAS_FILENAME);
+    (void) poptReadConfigFile(optCon, LIBVENDORALIAS_FILENAME);
     (void) poptReadDefaultConfig(optCon, 1);
     poptSetExecPath(optCon, RPMCONFIGDIR, 1);
 
