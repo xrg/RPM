@@ -266,6 +266,11 @@ rpmcliInit(int argc, char *const argv[], struct poptOption * optionsTable)
 	(void) poptReadConfigFile(optCon, poptfile);
 	free(poptfile);
     }
+    {
+	char *poptfile = rpmGenPath(rpmConfigDir(), LIBVENDORALIAS_FILENAME, NULL);
+	(void) poptReadConfigFile(optCon, poptfile);
+	free(poptfile);
+    }
     (void) poptReadDefaultConfig(optCon, 1);
 
     if ((execPath = getenv("RPM_POPTEXEC_PATH")) == NULL)
