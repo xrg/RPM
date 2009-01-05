@@ -124,6 +124,8 @@ static struct tokenBits_s const installScriptBits[] = {
     { "post",		RPMSENSE_SCRIPT_POST },
     { "rpmlib",		RPMSENSE_RPMLIB },
     { "verify",		RPMSENSE_SCRIPT_VERIFY },
+    { "hint",		RPMSENSE_MISSINGOK },
+    { "strong",		RPMSENSE_STRONG },
     { NULL, 0 }
 };
 
@@ -134,6 +136,8 @@ static const struct tokenBits_s const buildScriptBits[] = {
     { "build",		RPMSENSE_SCRIPT_BUILD },
     { "install",	RPMSENSE_SCRIPT_INSTALL },
     { "clean",		RPMSENSE_SCRIPT_CLEAN },
+    { "hint",		RPMSENSE_MISSINGOK },
+    { "strong",		RPMSENSE_STRONG },
     { NULL, 0 }
 };
 
@@ -649,6 +653,16 @@ static int handlePreambleTag(rpmSpec spec, Package pkg, rpmTag tag,
 	if ((rc = parseRCPOT(spec, pkg, field, tag, 0, tagflags)))
 	    return rc;
 	break;
+    case RPMTAG_SUGGESTSFLAGS:
+    case RPMTAG_ENHANCESFLAGS:
+	tagflags = RPMSENSE_MISSINGOK;
+	if (macro && (!strcmp(macro, "recommends")))
+	    tagflags |= RPMSENSE_STRONG;
+	if (macro && (!strcmp(macro, "supplements")))
+	    tagflags |= RPMSENSE_STRONG;
+	if ((rc = parseRCPOT(spec, pkg, field, tag, 0, tagflags)))
+	    return rc;
+	break;
     case RPMTAG_EXCLUDEARCH:
     case RPMTAG_EXCLUSIVEARCH:
     case RPMTAG_EXCLUDEOS:
@@ -706,6 +720,10 @@ typedef const struct PreambleRec_s {
 } * PreambleRec;
 
 #define LEN_AND_STR(_tag) (sizeof(_tag)-1), _tag
+    {RPMTAG_SUGGESTSFLAGS,	0, 0, 0, "recommends"},
+    {RPMTAG_SUGGESTSFLAGS,	0, 0, 0, "suggests"},
+    {RPMTAG_ENHANCESFLAGS,	0, 0, 0, "supplements"},
+    {RPMTAG_ENHANCESFLAGS,	0, 0, 0, "enhances"},
 
 static struct PreambleRec_s const preambleList[] = {
     {RPMTAG_NAME,		0, 0, LEN_AND_STR("name")},
