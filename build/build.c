@@ -182,6 +182,10 @@ fprintf(stderr, "*** rootDir %s buildDir %s\n", rootDir, buildDir);
     if (!(child = fork())) {
 
 	errno = 0;
+	setenv ("LANG", "C", 1);
+	unsetenv ("LC_ALL");
+	unsetenv ("LANGUAGE");
+	unsetenv ("LINGUAS");
 	(void) execvp(argv[0], (char *const *)argv);
 
 	rpmlog(RPMLOG_ERR, _("Exec of %s failed (%s): %s\n"),
