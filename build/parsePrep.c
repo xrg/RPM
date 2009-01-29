@@ -140,7 +140,7 @@ static char *doPatch(rpmSpec spec, uint32_t c, int strip, const char *db,
  * @param quietly	should -vv be omitted from tar?
  * @return		expanded %setup macro (NULL on error)
  */
-static char *doUntar(rpmSpec spec, uint32_t c, int quietly)
+static char *doUntar(rpmSpec spec, uint32_t c, int quietly, StringBuf after_setup_cmd)
 {
     char *fn;
     char *buf = NULL;
@@ -162,6 +162,11 @@ static char *doUntar(rpmSpec spec, uint32_t c, int quietly)
 	return NULL;
     }
 
+    if (after_setup_cmd) {
+	appendStringBuf(after_setup_cmd, " ");
+	appendStringBuf(after_setup_cmd, sp->source);
+    }
+    
     fn = rpmGetPath("%{_sourcedir}/", sp->source, NULL);
 
     /* FIX: shrug */
@@ -273,6 +278,14 @@ static int doSetupMacro(rpmSpec spec, const char *line)
 
     before = newStringBuf();
     after = newStringBuf();
+    StringBuf after_setup_cmd = NULL;
+    {	char *fix = rpmExpand("%{?_after_setup}", NULL);
+        if (fix && *fix) {
+	    after_setup_cmd = newStringBuf();
+	    appendStringBuf(after_setup_cmd, fix);
+	}
+	free(fix);
+    }
 
     optCon = poptGetContext(NULL, argc, argv, optionsTable, 0);
     while ((arg = poptGetNextOpt(optCon)) > 0) {
@@ -290,7 +303,7 @@ static int doSetupMacro(rpmSpec spec, const char *line)
 	    return RPMRC_FAIL;
 	}
 
-	{   char *chptr = doUntar(spec, num, quietly);
+	{   char *chptr = doUntar(spec, num, quietly, after_setup_cmd);
 	    if (chptr == NULL)
 		return RPMRC_FAIL;
 
@@ -349,7 +362,7 @@ static int doSetupMacro(rpmSpec spec, const char *line)
 
     /* do the default action */
    if (!createDir && !skipDefaultAction) {
-	char *chptr = doUntar(spec, 0, quietly);
+	char *chptr = doUntar(spec, 0, quietly, after_setup_cmd);
 	if (!chptr)
 	    return RPMRC_FAIL;
 	appendLineStringBuf(spec->prep, chptr);
@@ -366,7 +379,7 @@ static int doSetupMacro(rpmSpec spec, const char *line)
     }
 
     if (createDir && !skipDefaultAction) {
-	char *chptr = doUntar(spec, 0, quietly);
+	char *chptr = doUntar(spec, 0, quietly, after_setup_cmd);
 	if (chptr == NULL)
 	    return RPMRC_FAIL;
 	appendLineStringBuf(spec->prep, chptr);
@@ -382,6 +395,11 @@ static int doSetupMacro(rpmSpec spec, const char *line)
 	    appendLineStringBuf(spec->prep, fix);
 	}
 	free(fix);
+    }
+
+    if (after_setup_cmd) {
+	appendLineStringBuf(spec->prep, getStringBuf(after_setup_cmd));
+	after_setup_cmd = freeStringBuf(after_setup_cmd);
     }
 	
     return RPMRC_OK;
