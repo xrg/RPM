@@ -357,6 +357,17 @@ int addSource(rpmSpec spec, Package pkg, const char *field, rpmTag tag)
 	var = rpmluavFree(var);
 	rpmluaPop(lua);
 	}
+	{
+	rpmlua lua = NULL; /* global state */
+	const char * what = (flag & RPMBUILD_ISPATCH) ? "patches_num" : "sources_num";
+	rpmluaPushTable(lua, what);
+	rpmluav var = rpmluavNew();
+	rpmluavSetKey(var, RPMLUAV_STRING, body);
+	rpmluavSetValueNum(var, num);
+	rpmluaSetVar(lua, var);
+	var = rpmluavFree(var);
+	rpmluaPop(lua);
+	}
 #endif
 	body = _free(body);
     }
@@ -451,6 +462,8 @@ rpmSpec newSpec(void)
     rpmlua lua = NULL; /* global state */
     rpmluaPushTable(lua, "patches");
     rpmluaPushTable(lua, "sources");
+    rpmluaPushTable(lua, "patches_num");
+    rpmluaPushTable(lua, "sources_num");
     rpmluaPop(lua);
     rpmluaPop(lua);
     }
@@ -516,6 +529,8 @@ rpmSpec freeSpec(rpmSpec spec)
     rpmlua lua = NULL; /* global state */
     rpmluaDelVar(lua, "patches");
     rpmluaDelVar(lua, "sources");	
+    rpmluaDelVar(lua, "patches_num");
+    rpmluaDelVar(lua, "sources_num");
 #endif
 
     spec->sources = freeSources(spec->sources);

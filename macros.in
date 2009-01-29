@@ -1102,6 +1102,11 @@ done \
 %patches %{lua: for i, p in ipairs(patches) do print(p.." ") end}
 %sources %{lua: for i, s in ipairs(sources) do print(s.." ") end}
 
+# default patch command:
+%_patch %__patch
+
+%apply_patches %{lua: keys = {}; for i, p in ipairs(patches) do print(rpm.expand("%{_patch} -s -p1 -b --suffix " .. string.format(".%04d", patches_num[p]) .. " --fuzz=%{_default_patch_fuzz} -i " .. p .. "\\n")) end }
+
 #------------------------------------------------------------------------------
 # Useful perl macros (from Artur Frysiak <wiget@t17.ds.pwr.wroc.pl>)
 #
