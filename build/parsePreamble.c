@@ -307,6 +307,7 @@ static int addSource(rpmSpec spec, Package pkg, const char *field, rpmTagVal tag
 	free(buf);
 #ifdef WITH_LUA
 	if (!spec->recursing) {
+	  {
 	    rpmlua lua = NULL; /* global state */
 	    const char * what = (flag & RPMBUILD_ISPATCH) ? "patches" : "sources";
 	    rpmluaPushTable(lua, what);
@@ -316,6 +317,18 @@ static int addSource(rpmSpec spec, Package pkg, const char *field, rpmTagVal tag
 	    rpmluaSetVar(lua, var);
 	    rpmluavFree(var);
 	    rpmluaPop(lua);
+	  }
+	  {
+	    rpmlua lua = NULL; /* global state */
+	    const char * what = (flag & RPMBUILD_ISPATCH) ? "patches_num" : "sources_num";
+	    rpmluaPushTable(lua, what);
+	    rpmluav var = rpmluavNew();
+	    rpmluavSetKey(var, RPMLUAV_STRING, body);
+	    rpmluavSetValueNum(var, num);
+	    rpmluaSetVar(lua, var);
+	    rpmluavFree(var);
+	    rpmluaPop(lua);
+	  }
 	}
 #endif
 	free(body);

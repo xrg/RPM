@@ -208,6 +208,10 @@ rpmSpec newSpec(void)
     rpmlua lua = NULL; /* global state */
     rpmluaPushTable(lua, "patches");
     rpmluaPushTable(lua, "sources");
+    rpmluaPushTable(lua, "patches_num");
+    rpmluaPushTable(lua, "sources_num");
+    rpmluaPop(lua);
+    rpmluaPop(lua);
     rpmluaPop(lua);
     rpmluaPop(lua);
     }
