@@ -112,7 +112,13 @@ static char *doPatch(rpmSpec spec, uint32_t c, int strip, const char *db,
 		reverse ? " -R" : "", 
 		removeEmpties ? " -E" : "");
 
-    patchcmd = rpmExpand("%{uncompress: ", fn, "} | %{__patch} ", args, NULL);
+
+    rpmCompressedMagic compressed = COMPRESSED_OTHER;
+    (void) rpmFileIsCompressed(fn, &compressed);
+    if (compressed == COMPRESSED_NOT)
+      patchcmd = rpmExpand("%{_patch} ", args, " -i ", fn, NULL);
+    else
+      patchcmd = rpmExpand("%{uncompress: ", fn, "} | %{_patch} ", args, NULL);
 
     free(arg_fuzz);
     free(arg_backup);
