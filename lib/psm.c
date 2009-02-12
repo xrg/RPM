@@ -1678,6 +1678,8 @@ assert(psm->mi == NULL);
 	    psm->rpmio_flags = "r.bzdio";
 	if (!strcmp(payload_compressor, "lzma"))
 	    psm->rpmio_flags = "r.lzdio";
+	if (!strcmp(payload_compressor, "xz"))
+	    psm->rpmio_flags = "r.xzdio";
 	rpmtdFreeData(&pc);
 
 	rc = RPMRC_OK;

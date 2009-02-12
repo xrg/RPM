@@ -178,6 +178,7 @@ AC_PATH_PROG(__RSH, rsh, /usr/bin/rsh, $MYPATH)
 AC_PATH_PROG(__SED, sed, /bin/sed, $MYPATH)
 AC_PATH_PROG(__SSH, ssh, /usr/bin/ssh, $MYPATH)
 AC_PATH_PROG(__TAR, tar, /bin/tar, $MYPATH)
+AC_PATH_PROG(__XZ, lzma, /usr/bin/xz, $MYPATH)
 
 AC_PATH_PROG(__LD, ld, /usr/bin/ld, $MYPATH)
 AC_PATH_PROG(__NM, nm, /usr/bin/nm, $MYPATH)

@@ -989,9 +989,14 @@ static const struct rpmlibProvides_s rpmlibProvides[] = {
 	(RPMSENSE_RPMLIB|RPMSENSE_EQUAL),
     N_("package payload can be compressed using bzip2.") },
 #endif
+#if HAVE_LZMA_H
     { "rpmlib(PayloadIsLzma)",		"4.4.2-1",
 	(RPMSENSE_RPMLIB|RPMSENSE_EQUAL),
     N_("package payload can be compressed using lzma.") },
+    { "rpmlib(PayloadIsXz)",		"5.2-1",
+	(RPMSENSE_RPMLIB|RPMSENSE_EQUAL),
+    N_("package payload can be compressed using xz.") },    
+#endif
     { "rpmlib(PayloadFilesHavePrefix)",	"4.0-1",
 	(RPMSENSE_RPMLIB|RPMSENSE_EQUAL),
     N_("package payload file(s) have \"./\" prefix.") },
