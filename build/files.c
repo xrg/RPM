@@ -867,7 +867,6 @@ static rpmRC parseForSimple(rpmSpec spec, Package pkg, char * buf,
 		appendStringBuf(pkg->specialDoc, "DOCDIR=$RPM_BUILD_ROOT");
 		appendLineStringBuf(pkg->specialDoc, pkg->specialDocDir);
 		appendLineStringBuf(pkg->specialDoc, "export DOCDIR");
-		appendLineStringBuf(pkg->specialDoc, "rm -rf $DOCDIR");
 		appendLineStringBuf(pkg->specialDoc, RPM_MKDIR_P " $DOCDIR");
 
 		*fileName = pkg->specialDocDir;
