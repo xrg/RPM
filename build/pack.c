@@ -385,7 +385,7 @@ rpmRC writeRPM(Header *hdrp, unsigned char ** pkgidp, const char *fileName,
 	    (void) rpmlibNeedsFeature(h, "PayloadIsBzip2", "3.0.5-1");
 	} else if (strcmp(s+1, "lzdio") == 0) {
 	    compr = "lzma";
-	    (void) rpmlibNeedsFeature(h, "PayloadIsLzma", "4.4.90-1");
+	    (void) rpmlibNeedsFeature(h, "PayloadIsLzma", "4.4.6-1");
 	} else {
 	    rpmlog(RPMLOG_ERR, _("Unknown payload compression: %s\n"),
 		   rpmio_flags);
