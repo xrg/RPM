@@ -891,7 +891,7 @@ typedef struct lzfile {
 
 static LZFILE *lzopen_internal(const char *path, const char *mode, int fd, int xz)
 {
-    int level = 7;	/* Use XZ's default compression level if unspecified */
+    int level = LZMA_PRESET_DEFAULT;
     int encoding = 0;
     FILE *fp;
     LZFILE *lzfile;
@@ -924,7 +924,7 @@ static LZFILE *lzopen_internal(const char *path, const char *mode, int fd, int x
     lzfile->strm = init_strm;
     if (encoding) {
 	if (xz) {
-	    ret = lzma_easy_encoder(&lzfile->strm, level, LZMA_CHECK_SHA256);
+	    ret = lzma_easy_encoder(&lzfile->strm, level, LZMA_CHECK_CRC32);
 	} else {
 	    lzma_options_lzma options;
 	    lzma_lzma_preset(&options, level);
