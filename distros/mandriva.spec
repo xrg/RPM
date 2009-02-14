@@ -1,3 +1,6 @@
+%define git_repo rpm
+%define git_head mandriva
+
 %define lib64arches	x86_64 
 
 %ifarch %lib64arches
@@ -77,133 +80,7 @@ Epoch:		1
 Version:        %{rpmversion}
 Release:	%{release}
 Group:		System/Configuration/Packaging
-Source:		http://www.rpm.org/releases/rpm-%{libver}.x/rpm-%{srcver}.tar.bz2
-# Add some undocumented feature to gendiff
-# Send upstream ? drop ?
-Patch17:	rpm-4.4.2.2-gendiff-improved.patch
-
-# if %post of foo-2 fails,
-# or if %preun of foo-1 fails,
-# or if %postun of foo-1 fails,
-# => foo-1 is not removed, so we end up with both packages in rpmdb
-# this patch makes rpm ignore the error in those cases
-# failing %pre must still make the rpm install fail (mdv #23677)
-#
-# (nb: the exit code for pretrans/posttrans & trigger/triggerun/triggerpostun
-#       scripts is ignored with or without this patch)
-Patch22:        rpm-4.9.0-non-pre-scripts-dont-fail.patch
-
-# (fredl) add loging facilities through syslog
-Patch31:	rpm-4.9.0-syslog.patch
-
-# - force /usr/lib/rpm/mageia/rpmrc instead of /usr/lib/rpm/<vendor>/rpmrc
-# - read /usr/lib/rpm/mageia/rpmpopt (not only /usr/lib/rpm/rpmpopt)
-# if we deprecated the use of rpm -ba , ...,  we can get rid of this patch
-Patch64:    rpm-4.9.1.1-mageia-rpmrc-rpmpopt.patch
-
-# In original rpm, -bb --short-circuit does not work and run all stage
-# From popular request, we allow to do this
-# http://qa.mandriva.com/show_bug.cgi?id=15896
-Patch70:	rpm-4.9.1-bb-shortcircuit.patch
-
-# don't conflict for doc files
-# (to be able to install lib*-devel together with lib64*-devel even if they have conflicting manpages)
-Patch83: rpm-4.10.0-no-doc-conflicts.patch
-
-# Fix http://qa.mandriva.com/show_bug.cgi?id=19392
-# (is this working??)
-Patch84: rpm-4.4.2.2-rpmqv-ghost.patch
-
-# Fix diff issue when buildroot contains some "//"
-Patch111: rpm-check-file-trim-double-slash-in-buildroot.patch
-
-# [Dec 2008] macrofiles from rpmrc does not overrides MACROFILES anymore
-Patch114: rpm-4.9.0-read-macros_d-dot-macros.patch
-
-# [pixel] without this patch, "rpm -e" or "rpm -U" will need to stat(2) every dirnames of
-# files from the package (eg COPYING) in the db. This is quite costly when not in cache 
-# (eg on a test here: >300 stats, and so 3 seconds after a "echo 3 > /proc/sys/vm/drop_caches")
-# this breaks urpmi test case test_rpm_i_fail('gd') in superuser--file-conflicts.t,
-# but this is bad design anyway
-#Patch124: rpm-4.6.0-rc1-speedup-by-not-checking-same-files-with-different-paths-through-symlink.patch
-
-# [from SuSE] handle "Suggests" via RPMTAG_SUGGESTSNAME
-Patch133: rpm-4.10.0-weakdeps.patch
-Patch134: extcond.diff
-
-# (from Turbolinux) remove a wrong check in case %_topdir is /RPM (ie when it is short)
-# Panu said: "To my knowledge this is a true technical limitation of the
-# implementation: as long as debugedit can just overwrite data in the elf
-# sections things keep relatively easy, but if dest_dir is longer than the
-# original directory, debugedit would have to expand the whole elf file. Which
-# might be technically possible but debugedit currently does not even try to."
-Patch135: rpm-4.9.0-fix-debugedit.patch
-
-# convert data in the header to a specific encoding which used in the selected locale.
-# Not that usefull, everything should be UTF-8
-Patch137: rpm-4.9.1.1-headerIconv.patch
-
-# without this patch, "#%define foo bar" is surprisingly equivalent to "%define foo bar"
-# with this patch, "#%define foo bar" is a fatal error
-# Bug still valid => Send upstream for review.
-Patch145: rpm-forbid-badly-commented-define-in-spec.patch
-
-# cf http://wiki.mandriva.com/en/Rpm_filetriggers
-# Will be allowed to be dropped when "Collection" won't be experimental anymore.
-Patch146: rpm-4.9.1.1-filetriggers.patch
-
-# add two fatal errors (during package build)
-# Useful ? to drop ?
-#Patch147: rpm-rpmbuild-check-useless-tags-in-non-existant-binary-packages.patch
-
-# (nb: see the patch for more info about this issue)
-#Patch151: rpm-4.6.0-rc1-protect-against-non-robust-futex.patch
-
-Patch152: rpm-4.6.0-rc1-fix-nss-detection.patch
-
-#Patch157: introduce-_after_setup-which-is-called-after-setup.patch
-#Patch158: introduce-_patch-and-allow-easy-override-when-the-p.patch
-Patch159: introduce-apply_patches-and-lua-var-patches_num.patch
-
-Patch1007: rpm-4.6.0-rc3-xz-support.patch
-
-# Prevents $DOCDIR from being wiped out when using %%doc <fileinbuilddir>,
-# as this breaks stuff that installs files to $DOCDIR during %%install
-#Patch1008: rpm-4.6.0-rc3-no_rm_-rf_DOCDIR.patch
-
-# Exposes packagecolor tag and adds new tags from rpm5 as it otherwise will
-# break when these unknown tags might be found in the rpmdb. Notice that this
-# will only make rpm recognize these, not implement actual support for them..
-Patch1009: rpm-4.10.0-rpm5-tags.patch
-
-# Turbolinux patches
-# Crusoe CPUs say that their CPU family is "5" but they have enough features for i686.
-Patch2003: rpm-4.4.2.3-rc1-transmeta-crusoe-is-686.patch
-
-# The following patch isn't needed for Mandriva, but Turbolinux has it and it can't hurt much
-#
-# This patch fixes the problem when the post-scripts launched by rpm-build. 
-# The post-scripts launched by rpm-build works in LANG environment. If LANG is
-# other locale except C, then some commands launched by post-scripts will not
-# display characters which you expected.
-Patch2005: rpm-4.9.0-buildlang.patch
-
-Patch2006: rpm-4.10.0-setup-rubygems.patch
-
-# (tv) fix tests on non selinux systems:
-#BETA Patch2100: rpm-4.9.90-fix-test.diff
-
-Patch3000: mips_macros.patch
-Patch3001: fix_stack_protector_check.patch
-Patch3002: mips_define_isa_macros.patch
-Patch3003: rpm_arm_mips_isa_macros.patch
-Patch3004: rpm_add_armv5tl.patch
-
-#
-# Fedora patches
-# Patches 41xx are already in upstream and are 1xx in FC
-#
-
+Source:		rpm-%{version}.tar.gz
 License:	GPLv2+
 BuildRequires:	autoconf
 BuildRequires:	zlib-devel
@@ -354,10 +231,11 @@ programs that will manipulate RPM packages and databases.
 %endif
 
 %prep
-%setup -q -n %name-%srcver
-%apply_patches
+%git_get_source
+%setup -q
 
 %build
+mkdir m4
 autoreconf
 
 %if %builddebug
