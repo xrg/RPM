@@ -1,11 +1,13 @@
-.*
+.deps
+.libs
 !.tx
-!.gitignore
+.dirstamp
 /config*
 !configure.ac
 /db3
 /db
 /db-4.5.20
+/debugedit
 /lib/rpmdb_*
 !/lib/rpmdb_internal.h
 /po/*.gmo
@@ -17,7 +19,6 @@
 Makefile
 Makefile.in
 Makefile.in.in
-
 /ABOUT-NLS
 /ChangeLog
 /Doxytags
@@ -66,6 +67,7 @@ Makefile.in.in
 /rpmk
 /rpmkeys
 /rpmpopt-*
+/rpmpopt-4.6.*
 /rpmq
 /rpmrc
 /rpmsign
