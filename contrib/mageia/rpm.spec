@@ -348,10 +348,7 @@ programs that will manipulate RPM packages and databases.
 %setup -q
 
 %build
-aclocal
-automake-1.14 --add-missing
-automake
-autoreconf
+autoreconf -i
 
 %if %builddebug
 RPM_OPT_FLAGS=-g
