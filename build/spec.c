@@ -103,6 +103,7 @@ Package newPackage(rpmSpec spec)
     p->fileFile = NULL;
     p->policyList = NULL;
 
+    p->changeFile = NULL;
     if (spec->packages == NULL) {
 	spec->packages = p;
     } else {

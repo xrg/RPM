@@ -244,11 +244,16 @@ static rpmRC buildSpec(BTA_t buildArgs, rpmSpec spec, int what)
 	    (rc = doScript(spec, RPMBUILD_INSTALL, "%install",
 			   getStringBuf(spec->install), test)))
 		goto exit;
-
+	
 	if ((what & RPMBUILD_CHECK) &&
 	    (rc = doScript(spec, RPMBUILD_CHECK, "%check",
 			   getStringBuf(spec->check), test)))
 		goto exit;
+
+	if ((((what & RPMBUILD_PACKAGESOURCE) ||
+	     (what & RPMBUILD_PACKAGEBINARY)) && !test) &&
+	    (rc = processChangelog(spec)))
+		return rc;
 
 	if ((what & RPMBUILD_PACKAGESOURCE) &&
 	    (rc = processSourceFiles(spec, buildArgs->pkgFlags)))
