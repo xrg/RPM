@@ -1,5 +1,5 @@
-# Do not change this spec directly but in the svn
-# $Id: rpm.spec 134789 2007-03-27 15:13:43Z nanardon $
+%define git_repo rpm
+%define git_head mandriva
 
 %define lib64arches	x86_64 ppc64 sparc64
 
@@ -76,158 +76,7 @@ Epoch:		1
 Version:	%{rpmversion}
 Release:	%{release}
 Group:		System/Configuration/Packaging
-
-Source:		http://www.rpm.org/releases/rpm-%{libver}.x/rpm-%{srcver}.tar.bz2
-
-# if %post of foo-2 fails,
-# or if %preun of foo-1 fails,
-# or if %postun of foo-1 fails,
-# => foo-1 is not removed, so we end up with both packages in rpmdb
-# this patch makes rpm ignore the error in those cases
-# failing %pre must still make the rpm install fail (#23677)
-#
-# (nb: the exit code for pretrans/posttrans & trigger/triggerun/triggerpostun
-#       scripts is ignored with or without this patch)
-Patch22:        rpm-4.6.0-rc1-non-pre-scripts-dont-fail.patch
-
-# (fredl) add loging facilities through syslog
-# Patch sent to upstream for inclusion
-# http://lists.rpm.org/pipermail/rpm-maint/2011-March/002994.htm
-Patch31:	rpm-4.8.1-syslog.patch
-
-# part of Backport from 4.2.1 provides becoming obsoletes bug (fpons)
-# (is it still needed?)
-Patch49:	rpm-4.6.0-rc1-provides-obsoleted.patch
-
-# - force /usr/lib/rpm/mageia/rpmrc instead of /usr/lib/rpm/<vendor>/rpmrc
-# - read /usr/lib/rpm/mageia/rpmpopt (not only /usr/lib/rpm/rpmpopt)
-# Patch mageia Specific => Not merge candidate
-Patch64:    rpm-4.6.1-mageia-rpmrc-rpmpopt.patch
-
-# In original rpm, -bb --short-circuit does not work and run all stage
-# From popular request, we allow to do this
-# http://qa.mandriva.com/show_bug.cgi?id=15896Z
-# (A different implementation has landed in rpm-4.9)
-Patch70:	rpm-4.6.0-rc1-bb-shortcircuit.patch
-
-# http://www.redhat.com/archives/rpm-list/2005-April/msg00131.html
-# http://www.redhat.com/archives/rpm-list/2005-April/msg00132.html
-# is this useful? "at least erasure ordering is just as non-existent as it was in 4.4.x" says Panu
-#with rpm 4.8.0, breaks urpmi testsuite (ordering-scriptlets)
-#Patch71:    rpm-4.6.0-ordererase.patch#with rpm 4.8.0, breaks urpmi testsuite (ordering-scriptlets)
-
-# don't conflict for doc files
-# (to be able to install lib*-devel together with lib64*-devel even if they have conflicting manpages)
-Patch83: rpm-4.6.0-no-doc-conflicts.patch
-
-# Fix http://qa.mandriva.com/show_bug.cgi?id=19392
-# (is this working??)
-Patch84: rpm-4.4.2.2-rpmqv-ghost.patch
-
-# Fix diff issue when buildroot contains some "//"
-Patch111: rpm-check-file-trim-double-slash-in-buildroot.patch
-
-# [Dec 2008] macrofiles from rpmrc does not overrides MACROFILES anymore
-Patch114: rpm-4.6.0-rc1-read-macros_d-dot-macros.patch
-
-# remove unused skipDir functionality that conflicts with patch124 below
-#Patch1124: rpm-4.6.0-rc1-revert-unused-skipDir-functionality.patch
-
-# [pixel] without this patch, "rpm -e" or "rpm -U" will need to stat(2) every dirnames of
-# files from the package (eg COPYING) in the db. This is quite costly when not in cache 
-# (eg on a test here: >300 stats, and so 3 seconds after a "echo 3 > /proc/sys/vm/drop_caches")
-# this breaks urpmi test case test_rpm_i_fail('gd') in superuser--file-conflicts.t,
-# but this is bad design anyway
-#Patch124: rpm-4.6.0-rc1-speedup-by-not-checking-same-files-with-different-paths-through-symlink.patch
-
-# [from SuSE] handle "Suggests" via RPMTAG_SUGGESTSNAME
-Patch133: rpm-4.6.0-rc1-weakdeps.patch
-
-# (from Turbolinux) remove a wrong check in case %_topdir is /RPM (ie when it is short)
-Patch135: rpm-4.4.2.3-rc1-fix-debugedit.patch
-
-# convert data in the header to a specific encoding which used in the selected locale.
-Patch137: rpm-4.6.0-rc1-headerIconv.patch
-
-# Mandriva does not need the (broken) ldconfig hack since it uses filetriggers
-#Patch141: rpm-4.6.0-rc1-drop-skipping-ldconfig-hack.patch
-
-# without this patch, "#%define foo bar" is surprisingly equivalent to "%define foo bar"
-# with this patch, "#%define foo bar" is a fatal error
-Patch145: rpm-forbid-badly-commented-define-in-spec.patch
-
-# cf http://wiki.mandriva.com/en/Rpm_filetriggers
-Patch146: rpm-4.6.0-rc1-filetriggers.patch
-
-# add two fatal errors (during package build)
-Patch147: rpm-rpmbuild-check-useless-tags-in-non-existant-binary-packages.patch
-
-# (nb: see the patch for more info about this issue)
-Patch151: rpm-4.6.0-rc1-protect-against-non-robust-futex.patch
-
-Patch152: rpm-4.6.0-rc1-fix-nss-detection.patch
-
-Patch157: introduce-_after_setup-which-is-called-after-setup.patch
-Patch158: introduce-_patch-and-allow-easy-override-when-the-p.patch
-Patch159: introduce-apply_patches-and-lua-var-patches_num.patch
-
-
-Patch160: rpm-4.8.1-kill-libio.patch
-
-#Patch1001: rpm-4.6.0-rc1-new-liblzma.patch
-
-# default behaviour in rpm-jbj >= 4.4.6
-Patch1005: rpm-allow-conflicting-ghost-files.patch
-
-Patch1007: rpm-4.6.0-rc3-xz-support.patch
-
-# Prevents $DOCDIR from being wiped out when using %%doc <fileinbuilddir>,
-# as this breaks stuff that installs files to $DOCDIR during %%install
-Patch1008: rpm-4.6.0-rc3-no_rm_-rf_DOCDIR.patch
-
-# Exposes packagecolor tag and adds new tags from rpm5 as it otherwise will
-# break when these unknown tags might be found in the rpmdb. Notice that this
-# will only make rpm recognize these, not implement actual support for them..
-Patch1009: rpm-4.6.0-rpm5-tags.patch
-
-# Automatically handle ruby gem extraction in %setup
-Patch1018: rpm-4.8.1-setup-rubygems.patch
-
-# Turbolinux patches
-# add writeHeaderListTofile function into rpm-python (needed by "buildman" build system) (Toshihiro, 2003)
-#Patch2002: rpm-4.6.0-rc1-python-writeHdlist.patch
-# Crusoe CPUs say that their CPU family is "5" but they have enough features for i686.
-Patch2003: rpm-4.4.2.3-rc1-transmeta-crusoe-is-686.patch
-
-# The following patch isn't needed for Mandriva, but Turbolinux has it and it can't hurt much
-#
-# This patch fixes the problem when the post-scripts launched by rpm-build. 
-# The post-scripts launched by rpm-build works in LANG environment. If LANG is
-# other locale except C, then some commands launched by post-scripts will not
-# display characters which you expected.
-Patch2005: rpm-4.6.0-rc1-buildlang.patch
-
-Patch2000: rpm-4.6.0-rc1-serial-tag.patch
-# re-enable "copyright" tag (Kiichiro, 2005)
-Patch2001: rpm-4.6.0-rc1-copyright-tag.patch
-
-Patch3000: mips_macros.patch
-Patch3001: fix_stack_protector_check.patch
-Patch3002: mips_define_isa_macros.patch
-Patch3003: rpm_arm_mips_isa_macros.patch
-Patch3004: rpm_add_armv5tl.patch
-# This patch allow to fix build of rpm on other arch like ARM
-Patch3005: rpm_fix_platformdir.patch
-
-# CVE Patches
-Patch4000: rpm-4.8.1-CVE-2011-3378-1.patch
-Patch4001: rpm-4.8.1-CVE-2011-3378-2.patch
-Patch4002: rpm-4.8.1-CVE-2011-3378-3.patch
-Patch4003: rpm-4.8.1-CVE-2012-0060-1.patch
-Patch4004: rpm-4.8.1-CVE-2012-0060-2.patch
-Patch4005: rpm-4.8.1-CVE-2012-0061.patch
-Patch4006: rpm-4.8.1-CVE-2012-0815.patch
-
+Source:		rpm-%{version}.tar.gz
 License:	GPL
 BuildRequires:	autoconf >= 2.57
 BuildRequires:	zlib-devel
@@ -279,7 +128,7 @@ URL:            http://rpm.org/
 Requires(pre):		rpm-helper >= 0.8
 Requires(pre):		coreutils
 Requires(postun):	rpm-helper >= 0.8
-BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-buildroot
+# BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-buildroot
 
 %description
 RPM is a powerful command line driven package management system capable of
@@ -357,11 +206,11 @@ programs that will manipulate RPM packages and databases.
 %endif
 
 %prep
-%setup -q -n %name-%srcver
-%apply_patches
+%git_get_source
+%setup -q
 
 %build
-
+mkdir m4
 autoreconf
 
 %if %builddebug
