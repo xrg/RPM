@@ -127,6 +127,7 @@ Package newPackage(rpmSpec spec)
     p->preUnFile = NULL;
     p->postUnFile = NULL;
     p->verifyFile = NULL;
+    p->changeFile = NULL;
 
     p->specialDoc = NULL;
     p->specialDocDir = NULL;

@@ -163,6 +163,7 @@ struct Package_s {
     char * preTransFile;	/*!< %pretrans scriptlet. */
     char * postTransFile;	/*!< %posttrans scriptlet. */
     char * verifyFile;	/*!< %verifyscript scriptlet. */
+    char * changeFile;	/*!< %changelog file with extra entries */
 
     StringBuf specialDoc;
     char *specialDocDir;

@@ -247,10 +247,15 @@ rpmRC buildSpec(rpmts ts, rpmSpec spec, int what, int test)
 	if ((what & RPMBUILD_INSTALL) &&
 	    (rc = doScript(spec, RPMBUILD_INSTALL, NULL, NULL, test)))
 		goto exit;
-
+	
 	if ((what & RPMBUILD_CHECK) &&
 	    (rc = doScript(spec, RPMBUILD_CHECK, NULL, NULL, test)))
 		goto exit;
+
+	if ((((what & RPMBUILD_PACKAGESOURCE) ||
+	     (what & RPMBUILD_PACKAGEBINARY)) && !test) &&
+	    (rc = processChangelog(spec)))
+		return rc;
 
 	if ((what & RPMBUILD_PACKAGESOURCE) &&
 	    (rc = processSourceFiles(spec)))

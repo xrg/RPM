@@ -202,15 +202,39 @@ int parseChangelog(rpmSpec spec)
 {
     int nextPart, rc, res = PART_ERROR;
     StringBuf sb = newStringBuf();
-    
-    /* There are no options to %changelog */
-    if ((rc = readLine(spec, STRIP_COMMENTS)) > 0) {
-	res = PART_NONE;
-	goto exit;
-    } else if (rc < 0) {
+    int argc;
+    const char ** argv = NULL;
+
+    if ((rc = poptParseArgvString(spec->line, &argc, &argv))) {
+	rpmlog(RPMLOG_ERR, _("line %d: Error parsing %%changelog: %s\n"),
+		 spec->lineNum, poptStrerror(rc));
 	goto exit;
     }
-    
+
+    if (argc>1){
+    	if ((argc>2)&&(!strcmp(argv[1],"-f"))){
+	    if (*argv[2] == '/') {
+		spec->packages->changeFile= rpmGetPath(argv[2], NULL);
+	    } else {
+		/* XXX FIXME: add %{buildsubdir} */
+		spec->packages->changeFile = rpmGetPath("%{_builddir}/",
+			(spec->buildSubdir ? spec->buildSubdir : "") ,
+			"/", argv[2], NULL);
+	    }
+	} else{
+	    rpmlog(RPMLOG_ERR, _("line %d: Error parsing %%changelog: incorrect options.\n"),
+		 spec->lineNum);
+	    goto exit;
+	}
+    }
+
+    if ((rc = readLine(spec, STRIP_COMMENTS)) > 0) {
+       res = PART_NONE;
+       goto exit;
+    } else if (rc < 0) {
+       goto exit;
+    }
+	
     while (! (nextPart = isPart(spec->line))) {
 	appendStringBuf(sb, spec->line);
 	if ((rc = readLine(spec, STRIP_COMMENTS)) > 0) {
@@ -231,3 +255,37 @@ exit:
 
     return res;
 }
+
+int processChangelog(rpmSpec spec)
+{
+	StringBuf sb = newStringBuf();
+	FILE *fd;
+	int res;
+	char buf[BUFSIZ];
+	if (spec->packages->changeFile == NULL)
+		return RPMRC_OK;
+		
+
+	/* XXX W2DO? urlPath might be useful here. */
+	fd = fopen(spec->packages->changeFile, "r");
+
+	if (fd == NULL || ferror(fd)) {
+	    rpmlog(RPMLOG_ERR, _("Could not open %%changelog file %s: %m\n"), 
+	    	spec->packages->changeFile);
+	    return RPMRC_FAIL;
+	}
+	
+	rpmlog(RPMLOG_DEBUG, "\tprocessing changelog from %s\n", 
+		spec->packages->changeFile);
+
+	while (fgets(buf, sizeof(buf), fd)) {
+	    appendStringBuf(sb, buf);
+	}
+	(void) fclose(fd);
+
+	res = addChangelog(spec->packages->header, sb);
+	sb = freeStringBuf(sb);
+	
+	return res;
+}
+
