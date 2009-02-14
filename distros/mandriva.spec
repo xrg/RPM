@@ -213,8 +213,7 @@ programs that will manipulate RPM packages and databases.
 %setup -q
 
 %build
-mkdir m4
-autoreconf
+autoreconf -i
 
 %if %builddebug
 RPM_OPT_FLAGS=-g
