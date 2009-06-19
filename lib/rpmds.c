@@ -466,6 +466,8 @@ int32_t rpmdsSetRefs(const rpmds ds, int32_t refs)
 
 void rpmdsNotify(rpmds ds, const char * where, int rc)
 {
+    if (!rpmIsDebug())
+	return;
     if (!(ds != NULL && ds->i >= 0 && ds->i < ds->Count))
 	return;
     if (!(ds->Type != NULL && ds->DNEVR != NULL))
@@ -518,15 +520,14 @@ const char ** rpmdsDupArgv(const char ** argv, int argc)
 
     if (argv == NULL)
 	return NULL;
-    for (ac = 0; ac < argc; ac++) {
-assert(argv[ac] != NULL);
+    for (ac = 0; ac < argc && argv[ac]; ac++) {
 	nb += strlen(argv[ac]) + 1;
     }
     nb += (ac + 1) * sizeof(*av);
 
     av = xmalloc(nb);
     t = (char *) (av + ac + 1);
-    for (ac = 0; ac < argc; ac++) {
+    for (ac = 0; ac < argc && argv[ac]; ac++) {
 	av[ac] = t;
 	t = stpcpy(t, argv[ac]) + 1;
     }
@@ -779,8 +780,8 @@ void parseEVR(char * evr,
 
 int rpmdsCompare(const rpmds A, const rpmds B)
 {
-    char *aDepend = (A->DNEVR != NULL ? xstrdup(A->DNEVR+2) : "");
-    char *bDepend = (B->DNEVR != NULL ? xstrdup(B->DNEVR+2) : "");
+    const char *aDepend = (A->DNEVR != NULL ? A->DNEVR+2 : "");
+    const char *bDepend = (B->DNEVR != NULL ? B->DNEVR+2 : "");
     char *aEVR, *bEVR;
     const char *aE, *aV, *aR, *bE, *bV, *bR;
     int result;
@@ -856,8 +857,6 @@ exit:
     if (_noisy_range_comparison_debug_message)
     rpmlog(RPMLOG_DEBUG, "  %s    A %s\tB %s\n",
 	(result ? "YES" : "NO "), aDepend, bDepend);
-    aDepend = _free(aDepend);
-    bDepend = _free(bDepend);
     return result;
 }
 

@@ -644,13 +644,13 @@ static int pgpPrtSigParams(pgpTag tag, uint8_t pubkey_algo, uint8_t sigtype,
     return 0;
 }
 
-static int pgpPrtSig(pgpTag tag, const uint8_t *h, size_t hlen, pgpDig _dig)
+static int pgpPrtSig(pgpTag tag, const uint8_t *h, size_t hlen,
+		     pgpDig _dig, pgpDigParams _digp)
 {
     uint8_t version = h[0];
     uint8_t * p;
     size_t plen;
     int rc;
-    pgpDigParams _digp = _dig ? &_dig->signature : NULL;
 
     switch (version) {
     case 3:
@@ -1097,6 +1097,7 @@ int pgpPubkeyFingerprint(const uint8_t * pkt, size_t pktlen, pgpKeyID_t keyid)
     case 4:
       {	pgpPktKeyV4 v = (pgpPktKeyV4) (h);
 	uint8_t * d = NULL;
+	uint8_t in[3];
 	size_t dlen;
 	int i;
 
@@ -1113,7 +1114,12 @@ int pgpPubkeyFingerprint(const uint8_t * pkt, size_t pktlen, pgpKeyID_t keyid)
 	}
 
 	ctx = rpmDigestInit(PGPHASHALGO_SHA1, RPMDIGEST_NONE);
-	(void) rpmDigestUpdate(ctx, pkt, (se-pkt));
+	i = se - h;
+	in[0] = 0x99;
+	in[1] = i >> 8;
+	in[2] = i;
+	(void) rpmDigestUpdate(ctx, in, 3);
+	(void) rpmDigestUpdate(ctx, h, i);
 	(void) rpmDigestFinal(ctx, (void **)&d, &dlen, 0);
 
 	if (d) {
@@ -1170,7 +1176,7 @@ static int pgpPrtPkt(const uint8_t *pkt, size_t pleft,
     h = pkt + 1 + plen;
     switch (tag) {
     case PGPTAG_SIGNATURE:
-	rc = pgpPrtSig(tag, h, hlen, _dig);
+	rc = pgpPrtSig(tag, h, hlen, _dig, _digp);
 	break;
     case PGPTAG_PUBLIC_KEY:
 	/* Get the public key fingerprint. */
@@ -1285,11 +1291,9 @@ pgpDig pgpFreeDig(pgpDig dig)
 	    (void) rpmDigestFinal(dig->sha1ctx, NULL, NULL, 0);
 	dig->sha1ctx = NULL;
 
-#ifdef	NOTYET
 	if (dig->hdrmd5ctx != NULL)
 	    (void) rpmDigestFinal(dig->hdrmd5ctx, NULL, NULL, 0);
 	dig->hdrmd5ctx = NULL;
-#endif
 
 	if (dig->md5ctx != NULL)
 	    (void) rpmDigestFinal(dig->md5ctx, NULL, NULL, 0);
