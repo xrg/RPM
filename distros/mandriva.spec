@@ -1,5 +1,5 @@
 %define git_repo rpm
-%define git_head mandriva
+%define git_head mdv-xrg
 
 %define lib64arches	x86_64 
 
@@ -55,7 +55,7 @@
 %define libver		4.9
 %define libmajor	3
 %define libmajorsign    1
-%define release		%mkrel %{?snapver:0.%{snapver}.}0.2
+%define release		%mkrel %{git_get_rel}
 %define librpmname      %mklibname rpm  %{libmajor}
 %define librpmnamedevel %mklibname -d rpm
 %define librpmsign      %mklibname rpmsign %{libmajor}
