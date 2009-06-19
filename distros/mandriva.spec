@@ -1,5 +1,5 @@
 %define git_repo rpm
-%define git_head mandriva
+%define git_head mdv-xrg
 
 %define lib64arches	x86_64 ppc64 sparc64
 
@@ -47,7 +47,7 @@
 %define rpmversion	4.6.0
 %define srcver		%rpmversion
 %define libver		4.6
-%define release		%manbo_mkrel 1
+%define release		%mkrel %{git_get_rel}
 %define librpmname   %mklibname rpm  %{libver}
 %define librpmnamedevel   %mklibname -d rpm
 
