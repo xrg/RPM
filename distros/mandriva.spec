@@ -85,7 +85,7 @@ BuildRequires:	sed >= 4.0.3
 BuildRequires:	libbeecrypt-devel
 BuildRequires:	ed, gettext-devel
 BuildRequires:  libsqlite3-devel
-BuildRequires:  db4.6-devel
+BuildRequires:  db4.7-devel
 BuildRequires:  neon-devel
 BuildRequires:	popt-devel
 BuildRequires:	nss-devel
@@ -177,7 +177,7 @@ Requires:	file
 Requires:	gcc-c++
 # We need cputoolize & amd64-* alias to x86_64-* in config.sub
 Requires:	libtool-base >= 1.4.3-5mdk
-Requires:	patch
+Requires:	patch >= 2.5.9-7mdv2009.1
 Requires:	make
 Requires:	tar
 Requires:	unzip
