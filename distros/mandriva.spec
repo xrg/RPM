@@ -51,6 +51,7 @@
 %define __find_provides %{rpmdir}/%{_real_vendor}/find-provides
 
 %define rpmversion	4.8.1
+#define rpmversion	%{git_get_ver}
 %define srcver		%rpmversion
 %define libver		4.8
 %define release		%mkrel %{git_get_rel}
