@@ -44,7 +44,8 @@
 %define __find_provides %{rpmdir}/mandriva/find-provides
 %endif
 
-%define rpmversion	4.6.0
+%define rpmversion     4.6.1
+#define rpmversion	%{git_get_ver}
 %define srcver		%rpmversion
 %define libver		4.6
 %define release		%mkrel %{git_get_rel}
