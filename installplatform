@@ -114,8 +114,16 @@ for SUBST in $SUBSTS ; do
 	ISANAME=sh
 	ISABITS=32
 	;;
-    arm*)
-	ISANAME=`echo ${ARCH} | sed "s/^\([^-]*\)-.*/\1/"`
+    arm*b)
+	ISANAME=armeb
+	ISABITS=32
+	;;
+    arm)
+	ISANAME=armel
+	ISABITS=32
+	;;
+    arm*l)
+	ISANAME=armel
 	ISABITS=32
 	;;
     alpha*)
