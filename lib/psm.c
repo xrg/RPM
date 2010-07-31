@@ -602,6 +602,10 @@ static void doScriptExec(rpmts ts, ARGV_const_t argv, rpmtd prefixes,
 	    !(rootDir[0] == '/' && rootDir[1] == '\0'))
 	{
 	    xx = chroot(rootDir);
+	    if (xx < 0) {
+		rpmlog(RPMLOG_ERR, _("Unable to change root directory: %m\n"));
+		_exit(-1);
+	    }
 	}
 	xx = chdir("/");
 
