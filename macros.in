@@ -192,7 +192,7 @@ This package provides debug information for package %{name}.\
 Debug information is useful when developing applications that use this\
 package or when debugging this package.\
 %files debug -f debugfiles.list\
-%defattr(-,root,root)\
+%defattr(644,root,root,755)\
 %endif\
 %{nil}
 
