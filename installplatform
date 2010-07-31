@@ -106,6 +106,14 @@ for SUBST in $SUBSTS ; do
 	ISANAME=alpha
 	ISABITS=64
 	;;
+    mipsel)
+	ISANAME=mipsel
+	ISABITS=32
+	;;
+    mips)
+	ISANAME=mips
+	ISABITS=32
+	;;
   esac
 
   case $VENDOR in
