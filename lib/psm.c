@@ -510,7 +510,11 @@ static rpmRC runLuaScript(rpmpsm psm, Header h, rpmTag stag, ARGV_t argv,
 	rootFd = open(".", O_RDONLY, 0);
 	if (rootFd >= 0) {
 	    if (rootDir != NULL && strcmp(rootDir, "/") && *rootDir == '/')
-		xx = chroot(rootDir);
+		if(chroot(rootDir) < 0) {
+		    rpmlog(RPMLOG_ERR, _("Unable to change root directory: %m\n"));
+		    free(sname);
+		    return rc;
+		}
 	    xx = rpmtsSetChrootDone(ts, 1);
 	}
     }
