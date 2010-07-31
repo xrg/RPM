@@ -347,27 +347,29 @@ int addSource(rpmSpec spec, Package pkg, const char *field, rpmTag tag)
 	addMacro(spec->macros, buf, NULL, p->fullSource, RMIL_SPEC);
 	free(buf);
 #ifdef WITH_LUA
-	{
-	rpmlua lua = NULL; /* global state */
-	const char * what = (flag & RPMBUILD_ISPATCH) ? "patches" : "sources";
-	rpmluaPushTable(lua, what);
-	rpmluav var = rpmluavNew();
-	rpmluavSetListMode(var, 1);
-	rpmluavSetValue(var, RPMLUAV_STRING, body);
-	rpmluaSetVar(lua, var);
-	var = rpmluavFree(var);
-	rpmluaPop(lua);
-	}
-	{
-	rpmlua lua = NULL; /* global state */
-	const char * what = (flag & RPMBUILD_ISPATCH) ? "patches_num" : "sources_num";
-	rpmluaPushTable(lua, what);
-	rpmluav var = rpmluavNew();
-	rpmluavSetKey(var, RPMLUAV_STRING, body);
-	rpmluavSetValueNum(var, num);
-	rpmluaSetVar(lua, var);
-	var = rpmluavFree(var);
-	rpmluaPop(lua);
+	if(!spec->recursing) {
+		{
+		rpmlua lua = NULL; /* global state */
+		const char * what = (flag & RPMBUILD_ISPATCH) ? "patches" : "sources";
+		rpmluaPushTable(lua, what);
+		rpmluav var = rpmluavNew();
+		rpmluavSetListMode(var, 1);
+		rpmluavSetValue(var, RPMLUAV_STRING, body);
+		rpmluaSetVar(lua, var);
+		var = rpmluavFree(var);
+		rpmluaPop(lua);
+		}
+		{
+		rpmlua lua = NULL; /* global state */
+		const char * what = (flag & RPMBUILD_ISPATCH) ? "patches_num" : "sources_num";
+		rpmluaPushTable(lua, what);
+		rpmluav var = rpmluavNew();
+		rpmluavSetKey(var, RPMLUAV_STRING, body);
+		rpmluavSetValueNum(var, num);
+		rpmluaSetVar(lua, var);
+		var = rpmluavFree(var);
+		rpmluaPop(lua);
+		}
 	}
 #endif
 	body = _free(body);
