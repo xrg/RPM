@@ -50,12 +50,10 @@
 %define __find_requires %{rpmdir}/%{_real_vendor}/find-requires %{?buildroot:%{buildroot}} %{?_target_cpu:%{_target_cpu}}
 %define __find_provides %{rpmdir}/%{_real_vendor}/find-provides
 
-%define rpmversion	4.8.1
-#define rpmversion	%{git_get_ver}
+%define rpmversion	%{git_get_ver}
 %define srcver		%rpmversion
 %define libver		4.8
 %define release		%mkrel %{git_get_rel}
-%define release		%mkrel 10
 %define librpmname   %mklibname rpm  %{libmajor}
 %define librpmnamedevel   %mklibname -d rpm
 
@@ -77,7 +75,9 @@ Epoch:		1
 Version:	%{rpmversion}
 Release:	%{release}
 Group:		System/Configuration/Packaging
-Source:		rpm-%{version}.tar.gz
+Source:		%git_bs_source rpm-%{version}.tar.gz
+Source1:	%{name}-gitrpm.version
+Source2:	%{name}-changelog.gitrpm.txt
 License:	GPL
 BuildRequires:	autoconf >= 2.57
 BuildRequires:	zlib-devel
@@ -507,3 +507,5 @@ fi
 %{_libdir}/librpmbuild.la
 %{_libdir}/librpmbuild.so
 %{_libdir}/pkgconfig/rpm.pc
+
+%changelog -f  %{_sourcedir}/%{name}-changelog.gitrpm.txt
