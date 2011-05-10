@@ -124,7 +124,17 @@ debug_link()
   local l="/usr/lib/debug$2"
   local t="$1"
   echo >> "$LINKSFILE" "$l $t"
-  link_relative "$t" "$l" "$RPM_BUILD_ROOT"
+
+  # this should correspond to what brp-symlink is doing
+  case $t in
+      /usr*)
+	  link_relative "$t" "$l" "$RPM_BUILD_ROOT"
+	  ;;
+      *)
+	  mkdir -p "$(dirname "$RPM_BUILD_ROOT$l")" && \
+	      ln -snf "$t" "$RPM_BUILD_ROOT$l"
+	  ;;
+  esac
 }
 
 # Compare two binaries but ignore the .note.gnu.build-id section
@@ -158,8 +168,8 @@ make_id_link()
 
   local other=$(readlink -m "$root_idfile")
   other=${other#$RPM_BUILD_ROOT}
-  if cmp -s "$root_idfile" "$RPM_BUILD_ROOT$file" ||
-     elfcmp "$root_idfile" "$RPM_BUILD_ROOT$file" ; then
+  if cmp -s "$RPM_BUILD_ROOT$other" "$RPM_BUILD_ROOT$file" ||
+     elfcmp "$RPM_BUILD_ROOT$other" "$RPM_BUILD_ROOT$file" ; then
     # Two copies.  Maybe one has to be setuid or something.
     echo >&2 "*** WARNING: identical binaries are copied, not linked:"
     echo >&2 "        $file"
