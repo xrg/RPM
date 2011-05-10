@@ -47,9 +47,9 @@ for SUBST in $SUBSTS ; do
   ARCH_INSTALL_POST='%{nil}'
   case "${ARCH}-${OS}" in
     sparc64*-linux) LIB=lib64 ;;
-    s390x-linux) LIB=lib64 ;;
-    ppc64-linux|powerpc64-linux) LIB=lib64 ;;
-    x86_64-linux|amd64-linux|ia32e-linux) LIB=lib64 ;;
+    s390x-linux) ARCH_INSTALL_POST=${pkglibdir}/brp-lib64-linux ; LIB=lib64 ;;
+    ppc64-linux|powerpc64-linux) ARCH_INSTALL_POST=${pkglibdir}/brp-lib64-linux ; LIB=lib64 ;;
+    x86_64-linux|amd64-linux|ia32e-linux) ARCH_INSTALL_POST=${pkglibdir}/brp-lib64-linux ; LIB=lib64 ;;
     *) LIB=lib;;
   esac
 
@@ -128,6 +128,9 @@ for SUBST in $SUBSTS ; do
     ;;
   apple)
     VENDORSED='-e s,^@apple@,,'
+    ;;
+  suse)
+    VENDORSED='-e s,^@SuSE@,,'
     ;;
   esac
 

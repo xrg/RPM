@@ -10,9 +10,9 @@ rm -f config.cache
 # XXX edit CFLAGS= ... out of invocation args ???
 ARGS="`echo $* | sed -e 's% [^ ]*CFLAGS=[^ ]*%%' -e 's% -[^-][^ ]*%%g' -e 's% --param=[^ ]*%%g' -e 's%--cache-file=.*$%%'`"
 
-CC="$CC" CFLAGS="$CFLAGS" $db_dist/configure $ARGS \
+CC="$CC" CFLAGS="$CFLAGS" $db_dist/configure \
 	--enable-shared --enable-static \
-	--with-uniquename=_rpmdb --srcdir=$db_dist
+	--with-uniquename=_rpmdb --srcdir=$db_dist $ARGS
 
 mv Makefile Makefile.orig
 cat Makefile.orig | sed -e '/^install[:-]/c\
