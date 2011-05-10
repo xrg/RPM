@@ -212,7 +212,7 @@ static void rpmtsCheckDSIProblems(const rpmts ts, const rpmte te)
 		rpmpsAppend(ps, RPMPROB_DISKSPACE,
 			rpmteNEVRA(te), rpmteKey(te),
 			ts->filesystems[i], NULL, NULL,
-		   (adj_fs_blocks(dsi->bneeded) - dsi->bavail) * dsi->bsize);
+		   (adj_fs_blocks(dsi->bneeded)) * dsi->bsize);
 		dsi->obneeded = dsi->bneeded;
 	    }
 	}
@@ -222,7 +222,7 @@ static void rpmtsCheckDSIProblems(const rpmts ts, const rpmte te)
 		rpmpsAppend(ps, RPMPROB_DISKNODES,
 			rpmteNEVRA(te), rpmteKey(te),
 			ts->filesystems[i], NULL, NULL,
-			(adj_fs_blocks(dsi->ineeded) - dsi->iavail));
+			(adj_fs_blocks(dsi->ineeded)));
 		dsi->oineeded = dsi->ineeded;
 	    }
 	}
