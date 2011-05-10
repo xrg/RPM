@@ -2088,15 +2088,25 @@ int processSourceFiles(rpmSpec spec)
 	if (srcPtr->flags & RPMBUILD_ISSOURCE) {
 	    headerPutString(spec->sourceHeader, RPMTAG_SOURCE, srcPtr->source);
 	    if (srcPtr->flags & RPMBUILD_ISNO) {
-		headerPutUint32(spec->sourceHeader, RPMTAG_NOSOURCE,
-				&srcPtr->num, 1);
+		struct rpmtd_s td;
+		rpmtdReset(&td);
+		td.tag = RPMTAG_NOSOURCE;
+		td.type = RPM_INT32_TYPE;
+		td.data = &srcPtr->num;
+		td.count = 1; 
+		headerPut(spec->sourceHeader, &td, HEADERPUT_APPEND);
 	    }
 	}
 	if (srcPtr->flags & RPMBUILD_ISPATCH) {
 	    headerPutString(spec->sourceHeader, RPMTAG_PATCH, srcPtr->source);
 	    if (srcPtr->flags & RPMBUILD_ISNO) {
-		headerPutUint32(spec->sourceHeader, RPMTAG_NOSOURCE,
-				&srcPtr->num, 1);
+		struct rpmtd_s td;
+		rpmtdReset(&td);
+		td.tag = RPMTAG_NOPATCH;
+		td.type = RPM_INT32_TYPE;
+		td.data = &srcPtr->num;
+		td.count = 1; 
+		headerPut(spec->sourceHeader, &td, HEADERPUT_APPEND);
 	    }
 	}
 
