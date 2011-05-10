@@ -216,6 +216,7 @@ typedef enum rpmtdFormats_e {
     RPMTD_FORMAT_DEPTYPE	= 15,	/* dependency types (int types) */
     RPMTD_FORMAT_FSTATE		= 16,	/* file states (int types) */
     RPMTD_FORMAT_VFLAGS		= 17,	/* file verify flags (int types) */
+    RPMTD_FORMAT_DEPFLAG_STRONG	= 18,	/* strong dependency */
 } rpmtdFormats;
 
 /** \ingroup rpmtd
