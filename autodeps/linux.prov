@@ -107,4 +107,9 @@ fi
 [ -x /usr/lib/rpm/gstreamer-provides ] &&
     printf "%s\n" "${filelist[@]}" | /usr/lib/rpm/gstreamer-provides | sort -u
 
+#
+# --- Provides of sysvinit scripts
+[ -x /usr/lib/rpm/sysvinitdeps.sh ] &&
+    printf "%s\n" "${filelist[@]}" | /usr/lib/rpm/sysvinitdeps.sh -P | sort -u
+
 exit 0

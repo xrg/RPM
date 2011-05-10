@@ -40,6 +40,7 @@ rpmconfig_SCRIPTS = \
 	pkgconfigdeps.sh libtooldeps.sh \
 	ocaml-find-requires.sh ocaml-find-provides.sh \
 	fontconfig.prov desktop-file.prov \
+	sysvinitdeps.sh \
 	rpmdb_loadcvt rpmdiff rpm2cpio.sh tcl.req tgpg 
 
 rpmconfig_DATA = \
