@@ -542,6 +542,9 @@ const char *rpmdbHome(rpmdb db);
 int rpmdbExtendIterator(rpmdbMatchIterator mi,
 			const void * keyp, size_t keylen);
 
+int rpmdbExtendIteratorDirtag(rpmdbMatchIterator mi,
+			const void * keyp, size_t keylen, const char *);
+
 /** \ingroup rpmdb
  * sort the iterator by (recnum, filenum)
  * Return database iterator.

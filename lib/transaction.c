@@ -848,9 +848,12 @@ rpmdbMatchIterator rpmFindBaseNamesInDB(rpmts ts, uint64_t fileCount)
     rpmdbMatchIterator mi;
     int xx;
     const char * baseName;
+    const char * dirName;
 
+#if 0
     rpmStringSet baseNames = rpmStringSetCreate(fileCount, 
 					hashFunctionString, strcmp, NULL);
+#endif
 
     mi = rpmdbInitIterator(rpmtsGetRdb(ts), RPMTAG_BASENAMES, NULL, 0);
 
@@ -868,18 +871,25 @@ rpmdbMatchIterator rpmFindBaseNamesInDB(rpmts ts, uint64_t fileCount)
 	while (rpmfiNext(fi) >= 0) {
 	    size_t keylen;
 	    baseName = rpmfiBN(fi);
+	    dirName = rpmfiDN(fi);
+#if 0
 	    if (rpmStringSetHasEntry(baseNames, baseName))
 		continue;
+#endif
 
 	    keylen = strlen(baseName);
 	    if (keylen == 0)
 		keylen++;	/* XXX "/" fixup. */
-	    xx = rpmdbExtendIterator(mi, baseName, keylen);
+	    xx = rpmdbExtendIteratorDirtag(mi, baseName, keylen, dirName);
+#if 0
 	    rpmStringSetAddEntry(baseNames, baseName);
+#endif
 	 }
     }
     pi = rpmtsiFree(pi);
+#if 0
     rpmStringSetFree(baseNames);
+#endif
 
     rpmdbSortIterator(mi);
     /* iterator is now sorted by (recnum, filenum) */

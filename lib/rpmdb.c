@@ -1122,6 +1122,16 @@ int rpmdbVerify(const char * prefix)
     return rc;
 }
 
+static inline unsigned int taghash(const char *s)
+{
+    int c;
+    unsigned int r = 0;
+    while ((c = *(const unsigned char *)s++) != 0)
+	if (c != '/')
+	    r += (r << 3) + c;
+    return ((r & 0x7fff) | 0x8000) << 16;
+}
+
 /**
  * Find file matches in database.
  * @param db		rpm database
@@ -1181,6 +1191,11 @@ static int rpmdbFindByFile(rpmdb db, const char * filespec,
 	if (rc == 0)
 	    (void) dbt2set(dbi, data, &allMatches);
 
+	/* strip off directory tags */
+	if (allMatches != NULL)
+	    for (i = 0; i < allMatches->count; i++)
+		if (allMatches->recs[i].tagNum & 0x80000000)
+		    allMatches->recs[i].tagNum &= 0x0000ffff;
 	xx = dbiCclose(dbi, dbcursor, 0);
 	dbcursor = NULL;
     } else
@@ -2182,7 +2197,7 @@ void rpmdbSortIterator(rpmdbMatchIterator mi)
     }
 }
 
-static int rpmdbGrowIterator(rpmdbMatchIterator mi)
+static int rpmdbGrowIterator(rpmdbMatchIterator mi, unsigned int tag)
 {
     DBC * dbcursor;
     DBT * key;
@@ -2231,6 +2246,27 @@ static int rpmdbGrowIterator(rpmdbMatchIterator mi)
     xx = dbiCclose(dbi, dbcursor, 0);
     dbcursor = NULL;
 #endif
+
+    if (tag) {
+	int i, j;
+	/* prune the set against the tag */
+	for (i = j = 0; i < set->count; i++) {
+	    if (set->recs[i].tagNum & 0x80000000) {
+		/* tagged entry */
+		if ((set->recs[i].tagNum & 0xffff0000) != tag)
+		    continue;
+		set->recs[i].tagNum &= 0x0000ffff;
+	    }
+	    if (i != j)
+		set->recs[j] = set->recs[i];
+	    j++;
+	}
+	set->count = j;
+	if (j == 0) {
+	    set = dbiFreeIndexSet(set);
+	    return DB_NOTFOUND;
+	}
+    }
 
     if (mi->mi_set == NULL) {
 	mi->mi_set = set;
@@ -2413,7 +2449,15 @@ int rpmdbExtendIterator(rpmdbMatchIterator mi,
 {
     mi->mi_key.data = (void *) keyp;
     mi->mi_key.size = keylen ? keylen : strlen(keyp);
-    return rpmdbGrowIterator(mi);
+    return rpmdbGrowIterator(mi, 0);
+}
+
+int rpmdbExtendIteratorDirtag(rpmdbMatchIterator mi,
+			const void * keyp, size_t keylen, const char *dirname)
+{
+    mi->mi_key.data = (void *) keyp;
+    mi->mi_key.size = keylen ? keylen : strlen(keyp);
+    return rpmdbGrowIterator(mi, dirname ? taghash(dirname) : 0);
 }
 
 /*
@@ -2808,7 +2852,15 @@ int rpmdbAdd(rpmdb db, int iid, Header h,
 
     if (hdrNum)
     {	
+	struct rpmtd_s dn, di;
+	const char ** dirNames;
+	uint32_t * dirIndexes;
 	dbiIndexItem rec = dbiIndexNewItem(hdrNum, 0);
+
+	headerGet(h, RPMTAG_DIRNAMES, &dn, HEADERGET_MINMEM);
+	headerGet(h, RPMTAG_DIRINDEXES, &di, HEADERGET_MINMEM);
+	dirNames = dn.data;
+	dirIndexes = di.data;
 
 	if (dbiTags.tags != NULL)
 	for (dbix = 0; dbix < dbiTags.max; dbix++) {
@@ -2901,6 +2953,10 @@ int rpmdbAdd(rpmdb db, int iid, Header h,
 		 */
 		i = rec->tagNum = rpmtdGetIndex(&tagdata);
 		switch (rpmtag) {
+		case RPMTAG_BASENAMES:
+		    if (i < 0x010000)
+			rec->tagNum |= taghash(dirNames[dirIndexes[i]]);
+		    break;
 		case RPMTAG_REQUIRENAME: {
 		    /* Filter out install prerequisites. */
 		    rpm_flag_t *rflag = rpmtdNextUint32(&reqflags);
@@ -2986,6 +3042,9 @@ cont:
 	if (ret == 0) {
 	    headerSetInstance(h, hdrNum);
 	}
+
+	rpmtdFreeData(&dn);
+	rpmtdFreeData(&di);
     }
 
 exit:
