@@ -394,6 +394,8 @@ static int db3stat(dbiIndex dbi, unsigned int flags)
     return rc;
 }
 
+static int _lockdbfd = 0;
+
 static int db3close(dbiIndex dbi, unsigned int flags)
 {
     rpmdb rpmdb = dbi->dbi_rpmdb;
@@ -414,6 +416,9 @@ static int db3close(dbiIndex dbi, unsigned int flags)
 	rpmlog(RPMLOG_DEBUG, "closed   db index       %s/%s\n",
 		dbhome, dbi->dbi_file);
 
+	if (dbi->dbi_lockdbfd &&
+	    _lockdbfd)
+	    _lockdbfd--;
     }
 
     if (rpmdb->db_dbenv != NULL && dbi->dbi_use_dbenv) {
@@ -645,8 +650,6 @@ static int db3open(rpmdb rpmdb, rpmTag rpmtag, dbiIndex * dbip)
     }
 
     if (rc == 0) {
-	static int _lockdbfd = 0;
-
 	rc = db_create(&db, dbenv, dbi->dbi_cflags);
 	rc = cvtdberr(dbi, "db_create", rc, _debug);
 	if (rc == 0 && db != NULL) {
@@ -810,6 +813,7 @@ static int db3open(rpmdb rpmdb, rpmTag rpmtag, dbiIndex * dbip)
 		if (!(db->fd(db, &fdno) == 0 && fdno >= 0)) {
 		    rc = 1;
 		} else {
+		    int tries;
 		    struct flock l;
 		    memset(&l, 0, sizeof(l));
 		    l.l_whence = 0;
@@ -819,24 +823,39 @@ static int db3open(rpmdb rpmdb, rpmTag rpmtag, dbiIndex * dbip)
 				? F_RDLCK : F_WRLCK;
 		    l.l_pid = 0;
 
-		    rc = fcntl(fdno, F_SETLK, (void *) &l);
-		    if (rc) {
-			/* Warning iff using non-private CDB locking. */
-			rc = ((dbi->dbi_use_dbenv &&
-				(dbi->dbi_eflags & DB_INIT_CDB) &&
-				!(dbi->dbi_eflags & DB_PRIVATE))
-			    ? 0 : 1);
-			rpmlog( (rc ? RPMLOG_ERR : RPMLOG_WARNING),
-				_("cannot get %s lock on %s/%s\n"),
-				((dbi->dbi_mode & O_ACCMODE) == O_RDONLY)
-					? _("shared") : _("exclusive"),
-				dbhome, dbi->dbi_file);
-		    } else {
-			rpmlog(RPMLOG_DEBUG,
-				"locked   db index       %s/%s\n",
-				dbhome, dbi->dbi_file);
+		    for (tries = 0; ; tries++) {
+			rc = fcntl(fdno, F_SETLK, (void *) &l);
+			if (rc) {
+			    rc = ((dbi->dbi_use_dbenv &&
+				    (dbi->dbi_eflags & DB_INIT_CDB) &&
+				    !(dbi->dbi_eflags & DB_PRIVATE))
+				? 0 : 1);
+			    if (errno == EAGAIN && rc) {
+				struct timespec ts;
+				if (tries == 0)
+				    rpmlog(RPMLOG_WARNING, _("waiting for %s lock on %s/%s\n"), ((dbi->dbi_mode & (O_RDWR|O_WRONLY)) ? _("exclusive") : _("shared")), dbhome, dbi->dbi_file);
+				ts.tv_sec = (time_t)0;
+				ts.tv_nsec = 100000000;
+				if (tries < 10*60*3) {
+				    nanosleep(&ts, (struct timespec *)0);
+				    continue;
+				}
+			    }
+			    rpmlog( (rc ? RPMLOG_ERR : RPMLOG_WARNING),
+				    _("cannot get %s lock on %s/%s\n"),
+				    ((dbi->dbi_mode & O_ACCMODE) == O_RDONLY)
+					    ? _("shared") : _("exclusive"),
+				    dbhome, dbi->dbi_file);
+			} else {
+			    rpmlog(RPMLOG_DEBUG,
+				    "locked   db index       %s/%s\n",
+				    dbhome, dbi->dbi_file);
+			}
+			break;
 		    }
 		}
+		if (rc && dbi->dbi_use_dbenv)
+		    _lockdbfd--;
 	    }
 	}
     }
