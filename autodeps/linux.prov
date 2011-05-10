@@ -16,6 +16,8 @@ tcllist=
 monolist=($(printf "%s\n" "${filelist[@]}" | egrep "\\.(exe|dll)\$"))
 mimetypelist=($(printf "%s\n" "${filelist[@]}" | egrep "\\.(desktop)\$"))
 firmwarelist=($(printf "%s\n" "${filelist[@]}" | grep "/lib/firmware/"))
+pkgconfiglist=($(printf "%s\n" "${filelist[@]}" | egrep '\.pc$'))
+fontlist=($(printf "%s\n" "${filelist[@]}" | egrep -i "/usr/share/fonts/.*\.(ttf|otf|pfa)$"))
 
 #
 # --- Alpha does not mark 64bit dependencies
@@ -84,6 +86,16 @@ done | sort -u
 if [ -x $MONO_PREFIX/bin/mono -a -n "$monolist" ] ; then
     printf "%s\n" "${monolist[@]}" | MONO_PATH=$MONO_PREFIX/lib${MONO_PATH:+:$MONO_PATH} prefix=$MONO_PREFIX $MONO_PREFIX/bin/mono-find-provides || echo "WARNING: MONO RPM PROVIDES WERE NOT GENERATED FOR THIS BUILD!!" 1>&2
 fi
+
+#
+# --- pkgconfig provides
+[ -x /usr/lib/rpm/pkgconfigdeps.sh -a -n "$pkgconfiglist" ] &&
+     printf "%s\n" "${pkgconfiglist[@]}" | /usr/lib/rpm/pkgconfigdeps.sh -P | sort -u
+
+#
+# --- font provides
+[ -x /usr/lib/rpm/fontconfig.prov -a -n "$fontlist" ] &&
+     printf "%s\n" "${fontlist[@]}" | /usr/lib/rpm/fontconfig.prov | sort -u
 
 #
 # --- Kernel module exported symbols
