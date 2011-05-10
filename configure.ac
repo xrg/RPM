@@ -478,6 +478,17 @@ dnl
 found_struct_statfs=no
 
 if test X$found_struct_statfs = Xno ; then
+dnl first try including sys/vfs.h
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#include <sys/vfs.h> ]], [[struct statfs sfs;]])],[AC_MSG_RESULT(in sys/vfs.h)
+	AC_DEFINE(STATFS_IN_SYS_VFS, 1, [statfs in <sys/vfs.h> (for linux systems)])
+	found_struct_statfs=yes],[])
+fi
+
+if test X$found_struct_statfs = Xno ; then
 dnl Solaris 2.6+ wants to use statvfs
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #ifdef HAVE_SYS_TYPES_H
@@ -486,17 +497,6 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <sys/statvfs.h> ]], [[struct statvfs sfs;]])],[AC_MSG_RESULT(in sys/statvfs.h)
 	AC_DEFINE(STATFS_IN_SYS_STATVFS, 1,
 		[statfs in <sys/statvfs.h> (for solaris 2.6+ systems)])
-	found_struct_statfs=yes],[])
-fi
-
-if test X$found_struct_statfs = Xno ; then
-dnl first try including sys/vfs.h
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
-#ifdef HAVE_SYS_TYPES_H
-#include <sys/types.h>
-#endif
-#include <sys/vfs.h> ]], [[struct statfs sfs;]])],[AC_MSG_RESULT(in sys/vfs.h)
-	AC_DEFINE(STATFS_IN_SYS_VFS, 1, [statfs in <sys/vfs.h> (for linux systems)])
 	found_struct_statfs=yes],[])
 fi
 
