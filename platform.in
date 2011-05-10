@@ -21,7 +21,7 @@
 %_exec_prefix		@exec_prefix@
 %_bindir		@bindir@
 %_sbindir		@sbindir@
-%_libexecdir		@libexecdir@
+%_libexecdir		%{_exec_prefix}/lib
 %_datarootdir		@datarootdir@
 %_datadir		@datadir@
 %_sysconfdir		@sysconfdir@
@@ -33,7 +33,7 @@
 %_oldincludedir		@oldincludedir@
 %_infodir		@infodir@
 %_mandir		@mandir@
-%_initddir		%{_sysconfdir}/rc.d/init.d
+%_initddir		%{_sysconfdir}/init.d
 # Deprecated misspelling, present for backwards compatibility.
 %_initrddir		%{_initddir}
 
@@ -146,3 +146,21 @@
 @mandrake@%_gamesdir	games
 @mandrake@%_gamesbindir   %{_prefix}/%{_gamesdir}
 @mandrake@%_gamesdatadir  %{_datadir}/%{_gamesdir}
+@SuSE@#---------------------------------------------------------------------
+@SuSE@#        Expanded at end of %prep
+@SuSE@#
+@SuSE@%__id_u          @__ID_U@
+@SuSE@%__chown_Rhf     @__CHOWN_RHF@
+@SuSE@%__chgrp_Rhf     @__CHGRP_RHF@
+@SuSE@%_fixowner       [ `%{__id_u}` = '0' ] && %{__chown_Rhf} root
+@SuSE@%_fixgroup       [ `%{__id_u}` = '0' ] && %{__chgrp_Rhf} root
+@SuSE@%_fixperms       %{__chmod} -Rf @FIXPERMS@
+@SuSE@
+@SuSE@#---------------------------------------------------------------------
+@SuSE@#        Expanded at start of %build
+@SuSE@#
+@SuSE@%__spec_build_pre %{___build_pre}\
+@SuSE@%{?buildroot:  %__rm -rf "$RPM_BUILD_ROOT"\
+@SuSE@  %__mkdir_p `dirname "$RPM_BUILD_ROOT"`\
+@SuSE@  %__mkdir "$RPM_BUILD_ROOT"\
+@SuSE@}
