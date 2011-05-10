@@ -102,4 +102,9 @@ fi
 [ -x /usr/lib/rpm/find-provides.ksyms ] &&
     printf "%s\n" "${filelist[@]}" | /usr/lib/rpm/find-provides.ksyms "$@"
 
+#
+# --- GStreamer provides, codecs
+[ -x /usr/lib/rpm/gstreamer-provides ] &&
+    printf "%s\n" "${filelist[@]}" | /usr/lib/rpm/gstreamer-provides | sort -u
+
 exit 0
