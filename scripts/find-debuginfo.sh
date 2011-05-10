@@ -127,6 +127,20 @@ debug_link()
   link_relative "$t" "$l" "$RPM_BUILD_ROOT"
 }
 
+# Compare two binaries but ignore the .note.gnu.build-id section
+elfcmp()
+{
+  local tmp1=$(mktemp -t ${1##*/}.XXXXXX)
+  local tmp2=$(mktemp -t ${2##*/}.XXXXXX)
+
+  objcopy -R .note.gnu.build-id -R .gnu_debuglink $1 $tmp1
+  objcopy -R .note.gnu.build-id -R .gnu_debuglink $2 $tmp2
+  cmp -s $tmp1 $tmp2
+  local res=$?
+  rm -f $tmp1 $tmp2
+  return $res
+}
+
 # Make a build-id symlink for id $1 with suffix $3 to file $2.
 make_id_link()
 {
@@ -145,7 +159,7 @@ make_id_link()
   local other=$(readlink -m "$root_idfile")
   other=${other#$RPM_BUILD_ROOT}
   if cmp -s "$root_idfile" "$RPM_BUILD_ROOT$file" ||
-     eu-elfcmp -q "$root_idfile" "$RPM_BUILD_ROOT$file" 2> /dev/null; then
+     elfcmp "$root_idfile" "$RPM_BUILD_ROOT$file" ; then
     # Two copies.  Maybe one has to be setuid or something.
     echo >&2 "*** WARNING: identical binaries are copied, not linked:"
     echo >&2 "        $file"
@@ -174,12 +188,18 @@ strict_error=ERROR
 $strict || strict_error=WARNING
 
 # Strip ELF binaries
-find "$RPM_BUILD_ROOT" ! -path "${debugdir}/*.debug" -type f \
-     		     \( -perm -0100 -or -perm -0010 -or -perm -0001 \) \
-		     -print |
-file -N -f - | sed -n -e 's/^\(.*\):[ 	]*.*ELF.*, not stripped/\1/p' |
-xargs --no-run-if-empty stat -c '%h %D_%i %n' |
+find $RPM_BUILD_ROOT ! -path "${debugdir}/*.debug" -type f \( -perm +111 -or -name "*.so*" -or -name "*.ko" \) -print 0 | sort -z |
+xargs --no-run-if-empty -0 stat -c '%h %D_%i %n' |
 while read nlinks inum f; do
+  case $(objdump -h $f 2>/dev/null | egrep -o '(debug[\.a-z_]*|gnu.version)') in
+    *debuglink*) continue ;;
+    *debug*) ;;
+    *gnu.version*)
+	echo "WARNING: "`echo $f | sed -e "s,^$RPM_BUILD_ROOT/*,/,"`" is already stripped!"
+	continue
+	;;
+    *) continue ;;
+  esac
   get_debugfn "$f"
   [ -f "${debugfn}" ] && continue
 
@@ -200,8 +220,11 @@ while read nlinks inum f; do
   fi
 
   echo "extracting debug info from $f"
-  id=$(/usr/lib/rpm/debugedit -b "$RPM_BUILD_DIR" -d /usr/src/debug \
-			      -i -l "$SOURCEFILE" "$f") || exit
+  mode=$(stat -c %a "$f")
+  chmod +w "$f"
+  id=$($(DEBUGEDIT=$(which debugedit 2>/dev/null); \
+      echo ${DEBUGEDIT:-/usr/lib/rpm/debugedit}) -b "$RPM_BUILD_DIR" \
+      -d /usr/src/debug -i -l "$SOURCEFILE" "$f") || exit
   if [ -z "$id" ]; then
     echo >&2 "*** ${strict_error}: No build ID note found in $f"
     $strict && exit 2
@@ -216,13 +239,25 @@ while read nlinks inum f; do
   esac
 
   mkdir -p "${debugdn}"
-  if test -w "$f"; then
-    strip_to_debug "${debugfn}" "$f"
-  else
-    chmod u+w "$f"
-    strip_to_debug "${debugfn}" "$f"
-    chmod u-w "$f"
-  fi
+  objcopy --only-keep-debug $f $debugfn || :
+  (
+    shopt -s extglob
+    strip_option="--strip-all"
+    case "$f" in
+      *.ko)
+	strip_option="--strip-debug" ;;
+      *$STRIP_KEEP_SYMTAB*)
+	if test -n "$STRIP_KEEP_SYMTAB"; then
+	  strip_option="--strip-debug"
+        fi
+        ;;
+    esac
+    if test "$NO_DEBUGINFO_STRIP_DEBUG" = true ; then
+      strip_option=
+    fi
+    objcopy --add-gnu-debuglink=$debugfn -R .comment -R .GCC.command.line $strip_option $f
+    chmod $mode $f
+  ) || :
 
   if [ -n "$id" ]; then
     make_id_link "$id" "$dn/$(basename $f)"
@@ -251,12 +286,14 @@ if [ -s "$SOURCEFILE" ]; then
   # stupid cpio creates new directories in mode 0700, fixup
   find "${RPM_BUILD_ROOT}/usr/src/debug" -type d -print0 |
   xargs --no-run-if-empty -0 chmod a+rx
+  find "${RPM_BUILD_ROOT}/usr/src/debug" -type f -print0 |
+  xargs --no-run-if-empty -0 chmod a+r
 fi
 
 if [ -d "${RPM_BUILD_ROOT}/usr/lib" -o -d "${RPM_BUILD_ROOT}/usr/src" ]; then
   ((nout > 0)) ||
   test ! -d "${RPM_BUILD_ROOT}/usr/lib" ||
-  (cd "${RPM_BUILD_ROOT}/usr/lib"; find debug -type d) |
+  (cd "${RPM_BUILD_ROOT}/usr/lib"; test ! -d debug || find debug -type d) |
   sed 's,^,%dir /usr/lib/,' >> "$LISTFILE"
 
   (cd "${RPM_BUILD_ROOT}/usr"
