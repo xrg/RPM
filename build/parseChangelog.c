@@ -168,6 +168,11 @@ static rpmRC addChangelog(Header h, StringBuf sb)
 	    return RPMRC_FAIL;
 	}
 
+        /* workaround old suse oddity */
+        if (*s == '-' && s[1] == ' ') {
+            s += 2;
+        }
+
 	/* name */
 	name = s;
 	while (*s != '\0') s++;
