@@ -101,14 +101,12 @@ rpm2cpio_LDADD +=	@WITH_LIBELF_LIB@ @WITH_NSS_LIB@ @WITH_POPT_LIB@ @WITH_ZLIB_LI
 
 
 if LIBELF
-if LIBDWARF
 rpmconfig_SCRIPTS += scripts/find-debuginfo.sh
 
 rpmlibexec_PROGRAMS +=	debugedit
 debugedit_SOURCES =	tools/debugedit.c tools/hashtab.c tools/hashtab.h
 debugedit_LDADD =	rpmio/librpmio.la
 debugedit_LDADD +=	@WITH_LIBELF_LIB@ @WITH_POPT_LIB@
-endif
 endif
 
 rpmlibexec_PROGRAMS +=	javadeps
