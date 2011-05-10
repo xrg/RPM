@@ -91,7 +91,8 @@ Signature   : %|DSAHEADER?{%{DSAHEADER:pgpsig}}:{%|RSAHEADER?{%{RSAHEADER:pgpsig
 %|PACKAGER?{Packager    : %{PACKAGER}\n}|\
 %|URL?{URL         : %{URL}\n}|\
 Summary     : %{SUMMARY}\n\
-Description :\n%{DESCRIPTION}\n' \
+Description :\n%{DESCRIPTION}\n\
+Distribution: %{DISTRIBUTION}\n' \
 	--POPTdesc=$"list descriptive information from package(s)"
 
 rpm	alias --changelog --qf '[* %{CHANGELOGTIME:day} %{CHANGELOGNAME}\n%{CHANGELOGTEXT}\n\n]' \
