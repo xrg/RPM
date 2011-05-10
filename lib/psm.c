@@ -455,6 +455,8 @@ static rpmRC runLuaScript(rpmpsm psm, Header h, rpmTag stag, ARGV_t argv,
 #ifdef WITH_LUA
     char *sname = NULL;
     int rootFd = -1;
+    int chroot_done;
+    const char *rootDir;
     int xx;
     rpmlua lua = NULL; /* Global state. */
     rpmluav var;
@@ -463,6 +465,22 @@ static rpmRC runLuaScript(rpmpsm psm, Header h, rpmTag stag, ARGV_t argv,
 
     rpmlog(RPMLOG_DEBUG, "%s: %s running <lua> scriptlet.\n",
 	   psm->stepName, sname);
+    chroot_done = rpmtsChrootDone(ts);
+    rootDir = rpmtsRootDir(ts);
+    if (!chroot_done) {
+	if (rootDir != NULL && strcmp(rootDir, "/") && *rootDir == '/') {
+	    xx = chdir("/");
+	    rootFd = open(".", O_RDONLY, 0);
+	    if (rootFd >= 0) {
+		xx = chroot(rootDir);
+		xx = rpmtsSetChrootDone(ts, 1);
+	    }
+	}
+    } else {
+	rootFd = open(".", O_RDONLY, 0);
+    }   
+    xx = chdir("/");
+
     if (!rpmtsChrootDone(ts)) {
 	const char *rootDir = rpmtsRootDir(ts);
 	xx = chdir("/");
@@ -505,12 +523,17 @@ static rpmRC runLuaScript(rpmpsm psm, Header h, rpmTag stag, ARGV_t argv,
     rpmluaDelVar(lua, "arg");
 
     if (rootFd >= 0) {
-	const char *rootDir = rpmtsRootDir(ts);
 	xx = fchdir(rootFd);
 	xx = close(rootFd);
-	if (rootDir != NULL && !rstreq(rootDir, "/") && *rootDir == '/')
+	if (!chroot_done) {
 	    xx = chroot(".");
-	xx = rpmtsSetChrootDone(ts, 0);
+	    xx = rpmtsSetChrootDone(ts, 0);
+	}
+    }
+    if (!chroot_done) {
+	const char *currDir = rpmtsCurrDir(ts);
+	if (currDir != NULL)
+	    xx = chdir(currDir);
     }
     free(sname);
 #else
