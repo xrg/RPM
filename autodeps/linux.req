@@ -32,7 +32,7 @@ liblist=($(printf "%s\0" "${filelist[@]}" | xargs -0 -r file | \
 
 interplist=()
 perllist=()
-pythonlist=()
+pythonlist=($(printf "%s\n" "${filelist[@]}" | egrep '/usr/lib[^/]*/python.\..'))
 tcllist=()
 monolist=($(printf "%s\n" "${filelist[@]}" | egrep "\\.(exe|dll)(\\.config)?\$"))
 
@@ -128,8 +128,8 @@ done | sort -u
 
 #
 # --- Python modules.
-[ -x /usr/lib/rpm/python.req -a -n "$pythonlist" ] && \
-    printf "%s\n" "${pythonlist[@]}" | /usr/lib/rpm/python.req | sort -u
+[ -x /usr/lib/rpm/pythondeps.sh -a -n "$pythonlist" ] && \
+    printf "%s\n" "${pythonlist[@]}" | /usr/lib/rpm/pythondeps.sh -R | sort -u
 
 #
 # --- Tcl modules.

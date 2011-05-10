@@ -5,17 +5,17 @@
     exit 0
 }
 
-PYVER=`python -c "import sys; v=sys.version_info[:2]; print '%d.%d'%v"`
 case $1 in
 -P|--provides)
     shift
-    grep "/usr/bin/python\*\$" >& /dev/null && echo "python(abi) = ${PYVER}"
-    exit 0
+    grep "/usr/bin/python.\..$" \
+	| sed -e "s|.*/usr/bin/python\(.\..\)|python(abi) = \1|"
     ;;
 -R|--requires)
     shift
-    grep "/usr/lib[^/]*/python${PYVER}/" >& /dev/null && echo "python(abi) = ${PYVER}"
-    exit 0
+    grep "/usr/lib[^/]*/python.\../.*" \
+	| sed -e "s|.*/usr/lib[^/]*/python\(.\..\)/.*|python(abi) = \1|g" \
+	| sort | uniq
     ;;
 esac
 
