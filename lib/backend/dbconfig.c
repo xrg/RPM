@@ -72,6 +72,8 @@ static const struct poptOption rdbOptions[] = {
 	NULL, NULL },
  { "fcntl_locking",0,POPT_BIT_SET,	&db3dbi.dbi_oflags, DB_FCNTL_LOCKING,
 	NULL, NULL },
+ { "nofsync",	0,POPT_BIT_SET,		&db3dbi.dbi_oflags, DB_NOFSYNC,
+	NULL, NULL },
 
  { "btree",	0,POPT_ARG_VAL,		&db3dbi.dbi_type, DB_BTREE,
 	NULL, NULL },
@@ -100,8 +102,6 @@ static const struct poptOption rdbOptions[] = {
  { "verify",	0,POPT_ARG_NONE,	&db3dbi.dbi_verify_on_close, 0,
 	NULL, NULL },
  { "usedbenv",	0,POPT_ARG_NONE,	&db3dbi.dbi_use_dbenv, 0,
-	NULL, NULL },
- { "nofsync",	0,POPT_ARG_NONE,	&db3dbi.dbi_no_fsync, 0,
 	NULL, NULL },
  { "nodbsync",	0,POPT_ARG_NONE,	&db3dbi.dbi_no_dbsync, 0,
 	NULL, NULL },

@@ -62,10 +62,12 @@ static int db_fini(dbiIndex dbi, const char * dbhome)
     return rc;
 }
 
+#if 0
 static int db3_fsync_disable(int fd)
 {
     return 0;
 }
+#endif
 
 #if (DB_VERSION_MAJOR >= 4 && DB_VERSION_MINOR >= 5)
 /*
@@ -168,10 +170,12 @@ static int db_init(dbiIndex dbi, const char * dbhome, DB_ENV ** dbenvp)
 	xx = cvtdberr(dbi, "dbenv->set_cachesize", xx, _debug);
     }
 
+#if 0
     if (dbi->dbi_no_fsync) {
 	xx = db_env_set_func_fsync(db3_fsync_disable);
 	xx = cvtdberr(dbi, "db_env_set_func_fsync", xx, _debug);
     }
+#endif
 
     if (dbi->dbi_shmkey) {
 	xx = dbenv->set_shm_key(dbenv, dbi->dbi_shmkey);
