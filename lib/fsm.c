@@ -736,22 +736,26 @@ static int fsmMapAttrs(FSM_t fsm)
 
     /* this check is pretty moot,  rpmfi accessors check array bounds etc */
     if (fi && i >= 0 && i < rpmfiFC(fi)) {
+	rpmts ts = fsmGetTs(fsm);
 	mode_t finalMode = rpmfiFModeIndex(fi, i);
 	dev_t finalRdev = rpmfiFRdevIndex(fi, i);
 	time_t finalMtime = rpmfiFMtimeIndex(fi, i);
 	const char *user = rpmfiFUserIndex(fi, i);
 	const char *group = rpmfiFGroupIndex(fi, i);
+	int safe = rpmtsChrootDone(ts);
+	extern int unameToUid_safe(const char *, gid_t *, int);
+	extern int gnameToGid_safe(const char *, gid_t *, int);
 	uid_t uid = 0;
 	gid_t gid = 0;
 
-	if (user && unameToUid(user, &uid)) {
+	if (user && unameToUid_safe(user, &uid, safe)) {
 	    if (fsm->goal == FSM_PKGINSTALL)
 		rpmlog(RPMLOG_WARNING,
 		    _("user %s does not exist - using root\n"), user);
 	    finalMode &= ~S_ISUID;      /* turn off suid bit */
 	}
 
-	if (group && gnameToGid(group, &gid)) {
+	if (group && gnameToGid_safe(group, &gid, safe)) {
 	    if (fsm->goal == FSM_PKGINSTALL)
 		rpmlog(RPMLOG_WARNING,
 		    _("group %s does not exist - using root\n"), group);
@@ -773,8 +777,7 @@ static int fsmMapAttrs(FSM_t fsm)
 	if (fsm->mapFlags & CPIO_MAP_GID)
 	    st->st_gid = gid;
 
-	{   rpmts ts = fsmGetTs(fsm);
-
+	{
 	    /*
 	     * Set file digest (if not disabled).
 	     */
