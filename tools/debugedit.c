@@ -158,7 +158,7 @@ strptr (DSO *dso, int sec, off_t offset)
 	{
 	  if (data->d_buf
 	      && offset >= data->d_off
-	      && offset < data->d_off + data->d_size)
+	      && offset < data->d_off + (off_t)data->d_size)
 	    return (const char *) data->d_buf + (offset - data->d_off);
 	}
     }
@@ -488,9 +488,10 @@ static int
 edit_dwarf2_line (DSO *dso, uint32_t off, char *comp_dir, int phase)
 {
   unsigned char *ptr = debug_sections[DEBUG_LINE].data, *dir;
-  unsigned char **dirt;
+  char **dirt;
   unsigned char *endsec = ptr + debug_sections[DEBUG_LINE].size;
   unsigned char *endcu, *endprol;
+  char line_base;
   unsigned char opcode_base;
   uint32_t value, dirt_cnt;
   size_t comp_dir_len = strlen (comp_dir);
@@ -534,6 +535,7 @@ edit_dwarf2_line (DSO *dso, uint32_t off, char *comp_dir, int phase)
       return 1;
     }
   
+  line_base = (char) (ptr[2] & 0xff);
   opcode_base = ptr[4];
   ptr = dir = ptr + 4 + opcode_base;
   
@@ -545,13 +547,13 @@ edit_dwarf2_line (DSO *dso, uint32_t off, char *comp_dir, int phase)
       ++value;
     }
 
-  dirt = (unsigned char **) alloca (value * sizeof (unsigned char *));
+  dirt = (char **) alloca (value * sizeof (unsigned char *));
   dirt[0] = (unsigned char *) ".";
   dirt_cnt = 1;
   ptr = dir;
   while (*ptr != 0)
     {
-      dirt[dirt_cnt++] = ptr;
+      dirt[dirt_cnt++] = (char *)ptr;
       ptr = (unsigned char *) strchr ((char *)ptr, 0) + 1;
     }
   ptr++;
@@ -664,7 +666,7 @@ edit_dwarf2_line (DSO *dso, uint32_t off, char *comp_dir, int phase)
 
   if (dest_dir)
     {
-      unsigned char *srcptr, *buf = NULL;
+      char *srcptr, *buf = NULL;
       size_t base_len = strlen (base_dir);
       size_t dest_len = strlen (dest_dir);
       size_t shrank = 0;
@@ -678,11 +680,14 @@ edit_dwarf2_line (DSO *dso, uint32_t off, char *comp_dir, int phase)
 	  ptr = dir;
 	}
       else
-	ptr = srcptr = dir;
+	{
+	  ptr = dir;
+	  srcptr = (char *)dir;
+	}
       while (*srcptr != 0)
 	{
-	  size_t len = strlen ((char *)srcptr) + 1;
-	  const unsigned char *readptr = srcptr;
+	  size_t len = strlen ((char *)srcptr);
+	  const char *readptr = srcptr;
 
 	  if (*srcptr == '/' && has_prefix ((char *)srcptr, base_dir))
 	    {
@@ -691,42 +696,27 @@ edit_dwarf2_line (DSO *dso, uint32_t off, char *comp_dir, int phase)
 	      memcpy (ptr, dest_dir, dest_len);
 	      ptr += dest_len;
 	      readptr += base_len;
-		}
+	    }
 	  srcptr += len;
 
 	  shrank += srcptr - readptr;
 	  canonicalize_path ((char *)readptr, (char *)ptr);
-	  len = strlen ((char *)ptr) + 1;
+	  len = strlen ((char *)ptr);
+
+#ifdef DEBUG
+         if ((srcptr - readptr) > len)
+           error(0, 0,"canonicalization unexpectedly shrank (%lu): \"%s\"\n",
+                 (long unsigned int)(srcptr - readptr) - len, ptr);
+#endif
+
 	  shrank -= len;
 	  ptr += len;
-
-	      elf_flagdata (debug_sections[DEBUG_STR].elf_data,
-			    ELF_C_SET, ELF_F_DIRTY);
-	    }
-
-      if (shrank > 0)
-	{
-	  if (--shrank == 0)
-	    error (EXIT_FAILURE, 0,
-		   "canonicalization unexpectedly shrank by one character");
-	  else
-	    {	    
-	      memset (ptr, 'X', shrank);
-	      ptr += shrank;
-	      *ptr++ = '\0';
-	    }
+	  elf_flagdata (debug_sections[DEBUG_STR].elf_data,
+			ELF_C_SET, ELF_F_DIRTY);
+	  ++ptr;
+	  ++srcptr;
 	}
 
-      if (abs_dir_cnt + abs_file_cnt != 0)
-	{
-	  size_t len = (abs_dir_cnt + abs_file_cnt) * (base_len - dest_len);
-
-	  if (len == 1)
-	    error (EXIT_FAILURE, 0, "-b arg has to be either the same length as -d arg, or more than 1 char shorter");
-	  memset (ptr, 'X', len - 1);
-	  ptr += len - 1;
-	  *ptr++ = '\0';
-	}
       *ptr++ = '\0';
       ++srcptr;
 
@@ -746,21 +736,26 @@ edit_dwarf2_line (DSO *dso, uint32_t off, char *comp_dir, int phase)
 	      elf_flagdata (debug_sections[DEBUG_STR].elf_data,
 			    ELF_C_SET, ELF_F_DIRTY);
 	    }
-	  else if (ptr != srcptr)
+	  else if ((char *)ptr != srcptr)
 	    memmove (ptr, srcptr, len);
 	  srcptr += len;
 	  ptr += len;
-	  dir = srcptr;
+	  dir = (unsigned char *)srcptr;
 	  read_uleb128 (srcptr);
 	  read_uleb128 (srcptr);
 	  read_uleb128 (srcptr);
 	  if (ptr != dir)
-	    memmove (ptr, dir, srcptr - dir);
-	  ptr += srcptr - dir;
+	    memmove (ptr, dir, (unsigned char *)srcptr - dir);
+	  ptr += (unsigned char *)srcptr - dir;
 	}
       *ptr = '\0';
       free (buf);
     }
+
+  ptr++;
+  /* fill the rest until the line number program starts with NOP opcode */
+  memset(ptr, opcode_base - line_base, endprol - ptr);
+  /* don't touch the line number program */
   return 0;
 }
 
