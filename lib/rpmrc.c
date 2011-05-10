@@ -1,9 +1,6 @@
 #include "system.h"
 
 #include <stdarg.h>
-#if defined(__linux__) && defined(__powerpc__)
-#include <setjmp.h>
-#endif
 
 #include <ctype.h>	/* XXX for /etc/rpm/platform contents */
 
@@ -783,6 +780,14 @@ static inline int RPMClass(void)
 	
 	cpu = (tfms>>8)&15;
 	
+	if (cpu == 5
+	    && cpuid_ecx(0)=='68xM'
+	    && cpuid_edx(0)=='Teni'
+	    && (cpuid_edx(1) & ((1<<8)|(1<<15))) == ((1<<8)|(1<<15))) {
+		sigaction(SIGILL, &oldsa, NULL);
+		return 6;       /* has CX8 and CMOV */
+	}
+
 	sigaction(SIGILL, &oldsa, NULL);
 
 	if (cpu < 6)
@@ -919,15 +924,6 @@ static int is_geode()
 }
 #endif
 
-#if defined(__linux__) && defined(__powerpc__)
-static jmp_buf mfspr_jmpbuf;
-
-static void mfspr_ill(int notused)
-{
-    longjmp(mfspr_jmpbuf, -1);
-}
-#endif
-
 /**
  */
 static void defaultMachine(const char ** arch,
@@ -1054,6 +1050,11 @@ static void defaultMachine(const char ** arch,
 	   /* big endian */
 		strcpy(un.machine, "mips");
 #	endif
+	/* in linux, lets rename parisc to hppa */
+#if defined(__linux__)
+	if (!strcmp(un.machine,"parisc"))
+	    strcpy(un.machine,"hppa");
+#endif
 
 #	if defined(__hpux) && defined(_SC_CPU_VERSION)
 	{
