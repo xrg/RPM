@@ -469,6 +469,10 @@ rpmdb rpmtsGetRdb(rpmts ts);
 void * rpmtsNotify(rpmts ts, rpmte te,
                 rpmCallbackType what, rpm_loff_t amount, rpm_loff_t total);
 
+int rpmtsSuspendResumeDBLock(rpmts ts, int mode)
+	/*@globals fileSystem @*/
+	/*@modifies fileSystem @*/;
+
 /** \ingroup rpmts
  * Return number of (ordered) transaction set elements.
  * @param ts		transaction set

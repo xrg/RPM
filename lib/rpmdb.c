@@ -903,6 +903,21 @@ int rpmdbSync(rpmdb db)
     return rc;
 }
 
+int rpmdbSuspendResumeDBLock(rpmdb db, int mode)
+{
+    int dbix;
+    int rc = 0;
+    if (db == NULL) return 0;
+    for (dbix = 0; dbix < db->db_ndbi; dbix++) {
+	int xx;
+	if (db->_dbi[dbix] == NULL)
+	    continue;
+	xx = dbiSync(db->_dbi[dbix], mode ? -2 : -1);
+	if (xx && rc == 0) rc = xx;
+    }
+    return rc;
+}
+
 /* FIX: dbTemplate structure assignment */
 static
 rpmdb newRpmdb(const char * root,

@@ -754,6 +754,8 @@ static rpmRC runScript(rpmpsm psm, Header h, rpmTag stag, ARGV_t * argvp,
 	goto exit;
     }
 
+    rpmtsSuspendResumeDBLock(psm->ts, 0);
+
     xx = rpmsqFork(&psm->sq);
     if (psm->sq.child == 0) {
 	rpmlog(RPMLOG_DEBUG, "%s: %s\texecv(%s) pid %d\n",
@@ -767,6 +769,8 @@ static rpmRC runScript(rpmpsm psm, Header h, rpmTag stag, ARGV_t * argvp,
     }
 
     (void) psmWait(psm);
+
+    rpmtsSuspendResumeDBLock(psm->ts, 1);
 
     if (psm->sq.reaped < 0) {
 	rpmlog(RPMLOG_ERR, _("%s scriptlet failed, waitpid(%d) rc %d: %s\n"),

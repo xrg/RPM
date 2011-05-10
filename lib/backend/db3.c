@@ -208,11 +208,17 @@ errxit:
     return rc;
 }
 
+static int db3SuspendResumeLock(dbiIndex dbi, int mode);
+
 static int db3sync(dbiIndex dbi, unsigned int flags)
 {
     DB * db = dbi->dbi_db;
     int rc = 0;
 
+    if (flags == (unsigned int)-1)
+	return db3SuspendResumeLock(dbi, 0);
+    if (flags == (unsigned int)-2)
+	return db3SuspendResumeLock(dbi, 1);
     if (db != NULL) {
 	rc = db->sync(db, flags);
 	rc = cvtdberr(dbi, "db->sync", rc, _debug);
@@ -845,6 +851,48 @@ static int db3open(rpmdb rpmdb, rpmTag rpmtag, dbiIndex * dbip)
 	(void) db3close(dbi, 0);
     }
 
+    return rc;
+}
+
+static int
+db3SuspendResumeLock(dbiIndex dbi, int mode)
+{
+    struct flock l;
+    int rc = 0;
+    int tries;
+    int fdno = -1;
+
+    if (!dbi->dbi_lockdbfd)
+	return 0;
+    if (!(dbi->dbi_mode & (O_RDWR|O_WRONLY)))
+	return 0;
+    if (dbi->dbi_use_dbenv && _lockdbfd == 0)
+	return 0;
+    if (!(dbi->dbi_db->fd(dbi->dbi_db, &fdno) == 0 && fdno >= 0))
+	return 1;
+    if (mode == 0) {
+	memset(&l, 0, sizeof(l));
+	l.l_whence = 0;
+	l.l_start = 0;
+	l.l_len = 0;
+	l.l_type = F_RDLCK;
+	rc = fcntl(fdno, F_SETLK, (void *) &l);
+	if (rc)
+	    rpmlog(RPMLOG_WARNING, _("could not suspend database lock\n"));
+    } else {
+	for (tries = 0; tries < 2; tries++) {
+	    memset(&l, 0, sizeof(l));
+	    l.l_whence = 0;
+	    l.l_start = 0;
+	    l.l_len = 0;
+	    l.l_type = F_WRLCK;
+	    rc = fcntl(fdno, tries ? F_SETLKW : F_SETLK, (void *) &l);
+	    if (!rc)
+		break;
+	    if (tries == 0)
+		rpmlog(RPMLOG_WARNING, _("waiting to reestablish exclusive database lock\n"));
+	}
+    }
     return rc;
 }
 

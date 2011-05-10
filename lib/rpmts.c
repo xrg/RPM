@@ -89,6 +89,11 @@ int rpmtsOpenDB(rpmts ts, int dbmode)
     return rc;
 }
 
+int rpmtsSuspendResumeDBLock(rpmts ts, int mode)
+{
+    return rpmdbSuspendResumeDBLock(ts->rdb, mode);
+}
+
 int rpmtsInitDB(rpmts ts, int dbmode)
 {
     void *lock = rpmtsAcquireLock(ts);
