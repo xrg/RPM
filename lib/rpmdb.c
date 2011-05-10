@@ -835,10 +835,12 @@ int rpmdbClose(rpmdb db)
     rpmdb * prev, next;
     int dbix;
     int rc = 0;
+    int dbmode;
 
     if (db == NULL)
 	goto exit;
 
+    dbmode = db->db_mode;
     (void) rpmdbUnlink(db, RPMDBG_M("rpmdbClose"));
 
     if (db->nrefs > 0)
@@ -872,12 +874,14 @@ int rpmdbClose(rpmdb db)
 
     dbiTagsFree();
 
+    if ((dbmode & (O_RDWR|O_WRONLY)) != 0) {
+	(void) rpmsqEnable(-SIGHUP,	NULL);
+	(void) rpmsqEnable(-SIGINT,	NULL);
+	(void) rpmsqEnable(-SIGTERM,NULL);
+	(void) rpmsqEnable(-SIGQUIT,NULL);
+	(void) rpmsqEnable(-SIGPIPE,NULL);
+    }
 exit:
-    (void) rpmsqEnable(-SIGHUP,	NULL);
-    (void) rpmsqEnable(-SIGINT,	NULL);
-    (void) rpmsqEnable(-SIGTERM,NULL);
-    (void) rpmsqEnable(-SIGQUIT,NULL);
-    (void) rpmsqEnable(-SIGPIPE,NULL);
     return rc;
 }
 
@@ -971,11 +975,13 @@ static int openDatabase(const char * prefix,
     if (db == NULL)
 	return 1;
 
-    (void) rpmsqEnable(SIGHUP,	NULL);
-    (void) rpmsqEnable(SIGINT,	NULL);
-    (void) rpmsqEnable(SIGTERM,NULL);
-    (void) rpmsqEnable(SIGQUIT,NULL);
-    (void) rpmsqEnable(SIGPIPE,NULL);
+    if ((db->db_mode & (O_RDWR|O_WRONLY)) != 0) {
+	(void) rpmsqEnable(SIGHUP,	NULL);
+	(void) rpmsqEnable(SIGINT,	NULL);
+	(void) rpmsqEnable(SIGTERM,NULL);
+	(void) rpmsqEnable(SIGQUIT,NULL);
+	(void) rpmsqEnable(SIGPIPE,NULL);
+    }
 
     db->db_api = _dbapi;
 
