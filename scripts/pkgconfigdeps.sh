@@ -11,6 +11,13 @@ test -x $pkgconfig || {
     exit 0
 }
 
+`$pkgconfig --exists "pkg-config >= 0.24" 2> /dev/null`
+if [ $? -eq 0 ]; then
+	PRINT_REQUIRES="--print-requires --print-requires-private"
+else
+	PRINT_REQUIRES="--print-requires"
+fi
+
 case $1 in
 -P|--provides)
     while read filename ; do
@@ -39,7 +46,7 @@ case $1 in
 	[ $i -eq 1 ] && echo "$pkgconfig"
 	DIR="`dirname ${filename}`"
 	export PKG_CONFIG_PATH="$DIR:$DIR/../../share/pkgconfig"
-	$pkgconfig --print-requires "$filename" 2> /dev/null | while read n r v ; do
+	$pkgconfig $PRINT_REQUIRES "$filename" 2> /dev/null | while read n r v ; do
 	    [ -n "$n" ] || continue
 	    echo -n "pkgconfig($n) "
 	    [ -n "$r" ] && [ -n "$v" ] && echo -n "$r" "$v"
