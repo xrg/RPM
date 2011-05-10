@@ -2221,6 +2221,8 @@ static int checkFiles(StringBuf fileList)
 		_("Installed (but unpackaged) file(s) found:\n%s"), t);
 	}
     }
+    else
+       checkFiles(check_fileList);
     
 exit:
     sb_stdout = freeStringBuf(sb_stdout);
