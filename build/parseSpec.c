@@ -414,6 +414,7 @@ int parseSpec(rpmts ts, const char *specFile, const char *rootDir,
     spec = newSpec();
 
     spec->specFile = rpmGetPath(specFile, NULL);
+    addMacro(spec->macros, "_specfile", NULL, spec->specFile, RMIL_SPEC);
     spec->fileStack = newOpenFileInfo();
     spec->fileStack->fileName = xstrdup(spec->specFile);
     /* If buildRoot not specified, use default %{buildroot} */
