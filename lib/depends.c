@@ -100,6 +100,24 @@ static int removePackage(rpmts ts, Header h, rpmte depends)
     return 0;
 }
 
+static int rpmNameVersionCompare(Header first, Header second)
+{
+    const char * one, * two;
+    int rc;
+
+    rc = headerGetEntry(first, RPMTAG_NAME, NULL, (void **) &one, NULL);
+    rc = headerGetEntry(second, RPMTAG_NAME, NULL, (void **) &two, NULL);
+    rc = strcmp(one, two);
+    if (rc)
+	return rc;
+    rc = headerGetEntry(first, RPMTAG_ARCH, NULL, (void **) &one, NULL);
+    rc = headerGetEntry(second, RPMTAG_ARCH, NULL, (void **) &two, NULL);
+    rc = strcmp(one, two);
+    if (rc)
+	return rc;
+    return rpmVersionCompare(first, second);
+}
+
 int rpmtsAddInstallElement(rpmts ts, Header h,
 			fnpyKey key, int upgrade, rpmRelocation * relocs)
 {
@@ -275,7 +293,7 @@ addheader:
 	    continue;
 
 	/* Skip packages that contain identical NEVR. */
-	if (rpmVersionCompare(h, oh) == 0)
+	if (rpmNameVersionCompare(h, oh) == 0)
 	    continue;
 
 	xx = removePackage(ts, oh, p);
@@ -316,11 +334,9 @@ addheader:
 	     * If no obsoletes version info is available, match all names.
 	     */
 	    if (rpmdsEVR(obsoletes) == NULL
-	     || rpmdsAnyMatchesDep(oh, obsoletes, _rpmds_nopromote)) {
+	     || rpmdsNVRMatchesDep(oh, obsoletes, _rpmds_nopromote)) {
 		char * ohNEVRA = headerGetAsString(oh, RPMTAG_NEVRA);
-#ifdef	DYING	/* XXX see http://bugzilla.redhat.com #134497 */
-		if (rpmVersionCompare(h, oh))
-#endif
+		if (rpmNameVersionCompare(h, oh))
 		    xx = removePackage(ts, oh, p);
 		rpmlog(RPMLOG_DEBUG, "  Obsoletes: %s\t\terases %s\n",
 			rpmdsDNEVR(obsoletes)+2, ohNEVRA);
