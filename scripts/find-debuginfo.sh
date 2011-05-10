@@ -211,6 +211,17 @@ while read nlinks inum f; do
 	;;
     *) continue ;;
   esac
+  # double check that we really have an ELF file,
+  # to handle monodevelop-debugger-gdb and monodevelop-debugger-mdb
+  ftype=`/usr/bin/file $f | cut -d: -f2-`
+  case $ftype in
+    *ELF*) ;;
+    *)
+	echo "$f is not an ELF file, skipping"
+	continue
+	;;
+  esac
+
   get_debugfn "$f"
   [ -f "${debugfn}" ] && continue
 
