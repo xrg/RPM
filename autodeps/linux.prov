@@ -5,6 +5,9 @@
 IFS=$'\n'
 filelist=($(cat))
 
+debuginfolist=($(printf "%s\n" "${filelist[@]}" | grep "/usr/lib/debug/"))
+filelist=($(printf "%s\n" "${filelist[@]}" | grep -v "/usr/lib/debug/"))
+
 solist=($(printf "%s\n" "${filelist[@]}" | grep "\\.so" | grep -v "^/lib/ld.so" | \
 	  tr '\n' '\0' | xargs -0 -r file -L | grep "ELF.*shared object" | \
 	  cut -d: -f1))
@@ -69,6 +72,11 @@ done | sort -u
 # --- firmware files
 [ -x /usr/lib/rpm/firmware.prov -a -n "$firmwarelist" ] &&
      printf "%s\n" "${firmwarelist[@]}" | /usr/lib/rpm/firmware.prov | sort -u
+
+#
+# --- debuginfo files
+[ -x /usr/lib/rpm/debuginfo.prov -a -n "$debuginfolist" ] &&
+     printf "%s\n" "${debuginfolist[@]}" | /usr/lib/rpm/debuginfo.prov | sort -u
 
 #
 # --- Mono exes/dlls
