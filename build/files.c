@@ -1803,7 +1803,9 @@ static rpmRC processPackageFiles(rpmSpec spec, Package pkg,
 
     nullAttrRec(&fl.cur_ar);
     nullAttrRec(&fl.def_ar);
+#if 0
     dupAttrRec(&root_ar, &fl.def_ar);	/* XXX assume %defattr(-,root,root) */
+#endif
 
     fl.defVerifyFlags = RPMVERIFY_ALL;
     fl.nLangs = 0;
