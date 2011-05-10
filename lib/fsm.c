@@ -2089,6 +2089,10 @@ if (!(fsm->mapFlags & CPIO_ALL_HARDLINKS)) break;
 	break;
     case FSM_CHOWN:
 	rc = chown(fsm->path, st->st_uid, st->st_gid);
+	if (rc < 0 && errno == EPERM) {
+	    rpmlog(RPMLOG_WARNING, "can't chown %s (%s)\n", fsm->path, strerror(errno));
+	    rc = 0;
+	}
 	if (_fsm_debug && (stage & FSM_SYSCALL))
 	    rpmlog(RPMLOG_DEBUG, " %8s (%s, %d, %d) %s\n", cur,
 		fsm->path, (int)st->st_uid, (int)st->st_gid,
@@ -2098,6 +2102,10 @@ if (!(fsm->mapFlags & CPIO_ALL_HARDLINKS)) break;
     case FSM_LCHOWN:
 #if ! CHOWN_FOLLOWS_SYMLINK
 	rc = lchown(fsm->path, st->st_uid, st->st_gid);
+	if (rc < 0 && errno == EPERM) {
+	    rpmlog(RPMLOG_WARNING, "can't lchown %s (%s)\n", fsm->path, strerror(errno));
+	    rc = 0;
+	}
 	if (_fsm_debug && (stage & FSM_SYSCALL))
 	    rpmlog(RPMLOG_DEBUG, " %8s (%s, %d, %d) %s\n", cur,
 		fsm->path, (int)st->st_uid, (int)st->st_gid,
