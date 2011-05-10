@@ -6,8 +6,10 @@ CLEANFILES =
 
 EXTRA_DIST = \
 	brp-compress brp-python-bytecompile brp-java-gcjcompile \
+	brp-lib64-linux \
 	brp-strip brp-strip-comment-note \
 	brp-strip-shared brp-strip-static-archive \
+	brp-symlink \
 	check-files check-prereqs \
 	check-buildroot check-rpaths check-rpaths-worker \
 	find-debuginfo.sh find-lang.sh \
@@ -24,8 +26,10 @@ EXTRA_DIST = \
 
 rpmconfig_SCRIPTS = \
 	brp-compress brp-python-bytecompile brp-java-gcjcompile \
+	brp-lib64-linux \
 	brp-strip brp-strip-comment-note \
 	brp-strip-shared brp-strip-static-archive \
+	brp-symlink \
 	check-files check-prereqs \
 	check-buildroot check-rpaths check-rpaths-worker \
 	find-lang.sh \
