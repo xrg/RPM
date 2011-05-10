@@ -495,6 +495,7 @@ edit_dwarf2_line (DSO *dso, uint32_t off, char *comp_dir, int phase)
   uint32_t value, dirt_cnt;
   size_t comp_dir_len = strlen (comp_dir);
   size_t abs_file_cnt = 0, abs_dir_cnt = 0;
+  int comp_dir_used = 0;
 
   if (phase != 0)
     return 0;
@@ -603,6 +604,7 @@ edit_dwarf2_line (DSO *dso, uint32_t off, char *comp_dir, int phase)
 	  memcpy (p, dirt[value], dir_len);
 	  p[dir_len] = '/';
 	  memcpy (p + dir_len + 1, file, file_len + 1);
+	  comp_dir_used = 1;
 	}
       canonicalize_path (s, s);
       if (list_file_fd != -1)
@@ -635,7 +637,31 @@ edit_dwarf2_line (DSO *dso, uint32_t off, char *comp_dir, int phase)
       read_uleb128 (ptr);
     }
   ++ptr;
-  
+
+  if (comp_dir_used && list_file_fd != -1
+      && (base_dir == NULL || has_prefix (comp_dir, base_dir)))
+    {
+      char *p;
+      size_t size;
+      ssize_t ret;
+
+      size = comp_dir_len + 1;
+      p = comp_dir;
+      if (base_dir)
+	{
+	  p += strlen (base_dir);
+	  size -= strlen (base_dir);
+	}
+      while (size > 0)
+	{
+	  ret = write (list_file_fd, p, size);
+	  if (ret == -1)
+	    break;
+	  size -= ret;
+	  p += ret;
+	}
+    }
+
   if (dest_dir)
     {
       unsigned char *srcptr, *buf = NULL;
