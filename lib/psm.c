@@ -1318,6 +1318,7 @@ rpmRC rpmpsmStage(rpmpsm psm, pkgStage stage)
 
 	if (psm->goal == PSM_PKGINSTALL) {
 	    FD_t payload = NULL;
+	    rpmtransFlags oldtsflags;
 
 	    if (rpmtsFlags(ts) & RPMTRANS_FLAG_JUSTDB)	break;
 
@@ -1343,6 +1344,9 @@ rpmRC rpmpsmStage(rpmpsm psm, pkgStage stage)
 		break;
 	    }
 
+	    oldtsflags = rpmtsFlags(ts);
+	    if (headerIsEntry(fi->h, RPMTAG_REMOVETID))
+		(void) rpmtsSetFlags(ts, oldtsflags | RPMTRANS_FLAG_NOMD5);
 	    rc = fsmSetup(rpmfiFSM(fi), FSM_PKGINSTALL, ts, psm->te, fi,
 			payload, NULL, &psm->failedFile);
 	    (void) rpmswAdd(rpmtsOp(ts, RPMTS_OP_UNCOMPRESS),
@@ -1350,6 +1354,8 @@ rpmRC rpmpsmStage(rpmpsm psm, pkgStage stage)
 	    (void) rpmswAdd(rpmtsOp(ts, RPMTS_OP_DIGEST),
 			fdOp(payload, FDSTAT_DIGEST));
 	    xx = fsmTeardown(rpmfiFSM(fi));
+	    if (headerIsEntry(fi->h, RPMTAG_REMOVETID))
+		(void) rpmtsSetFlags(ts, oldtsflags);
 
 	    saveerrno = errno; /* XXX FIXME: Fclose with libio destroys errno */
 	    xx = Fclose(payload);
