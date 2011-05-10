@@ -470,14 +470,18 @@ print (t)\
 #
 # Path to scripts to autogenerate package dependencies,
 #
+%__set_helper_env %{lua:
+posix.setenv("RPMBUILD_SPECFILE",rpm.expand("%?_specfile"));
+posix.setenv("RPMBUILD_SOURCEDIR",rpm.expand("%?_sourcedir"));
+}
 # Note: Used iff _use_internal_dependency_generator is zero.
 #%__find_provides	%{_rpmconfigdir}/rpmdeps --provides
 #%__find_requires	%{_rpmconfigdir}/rpmdeps --requires
-%__find_provides	%{_rpmconfigdir}/find-provides %name
-%__find_requires	%{_rpmconfigdir}/find-requires %name
+%__find_provides	%{__set_helper_env}%{_rpmconfigdir}/find-provides %name
+%__find_requires	%{__set_helper_env}%{_rpmconfigdir}/find-requires %name
 #%__find_conflicts	???
 #%__find_obsoletes	???
-#%__find_supplements	???
+%__find_supplements	%{__set_helper_env}%{_rpmconfigdir}/find-supplements %name
 #%__find_enhances	???
 
 #
