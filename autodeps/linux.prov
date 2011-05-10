@@ -12,6 +12,7 @@ pythonlist=
 tcllist=
 monolist=($(printf "%s\n" "${filelist[@]}" | egrep "\\.(exe|dll)\$"))
 mimetypelist=($(printf "%s\n" "${filelist[@]}" | egrep "\\.(desktop)\$"))
+firmwarelist=($(printf "%s\n" "${filelist[@]}" | grep "/lib/firmware/"))
 
 #
 # --- Alpha does not mark 64bit dependencies
@@ -63,6 +64,11 @@ done | sort -u
 # --- mimetypes in .desktop files
 [ -x /usr/lib/rpm/mimetypes.prov -a -n "$mimetypelist" ] &&
     printf "%s\n" "${mimetypelist[@]}" | /usr/lib/rpm/mimetypes.prov | sort -u
+
+#
+# --- firmware files
+[ -x /usr/lib/rpm/firmware.prov -a -n "$firmwarelist" ] &&
+     printf "%s\n" "${firmwarelist[@]}" | /usr/lib/rpm/firmware.prov | sort -u
 
 #
 # --- Mono exes/dlls
