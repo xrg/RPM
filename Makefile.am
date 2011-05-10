@@ -131,6 +131,10 @@ check_PROGRAMS +=	rpmsort
 rpmsort_SOURCES =	tools/rpmsort.c
 rpmsort_LDADD =		lib/librpm.la
 
+bin_PROGRAMS +=		rpmqpack
+rpmqpack_SOURCES =      rpmqpack.c
+rpmqpack_LDADD =        lib/librpm.la
+
 rpmconfig_DATA = rpmrc
 rpmrc: $(top_srcdir)/rpmrc.in
 	@$(SED) \
