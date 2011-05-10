@@ -17,6 +17,10 @@
 #include <rpm/rpmfileutil.h>	/* rpmDoDigest() */
 #include <rpm/rpmlog.h>
 
+#if HAVE_GELF_H
+#include <gelf.h>
+#endif
+
 #include "rpmio/rpmio_internal.h"	/* XXX rpmioSlurp */
 #include "rpmio/base64.h"
 #include "rpmio/fts.h"
@@ -2230,12 +2234,136 @@ exit:
     return rc;
 }
 
+/* Query the build-id from the ELF file NAME and store it in the newly
+   allocated *build_id array of size *build_id_size.  Returns -1 on
+   error.  */
+
+int
+getELFBuildId (const char *name,
+	       unsigned char **id, size_t *id_size)
+{
+  int fd, i;
+  Elf *elf;
+  GElf_Ehdr ehdr;
+  Elf_Data *build_id = NULL;
+  size_t build_id_offset = 0, build_id_size = 0;
+
+  /* Now query the build-id of the file and add the
+     corresponding links in the .build-id tree.
+     The following code is based on tools/debugedit.c.  */
+  fd = open (name, O_RDONLY);
+  if (fd < 0)
+    return -1;
+  elf = elf_begin (fd, ELF_C_READ_MMAP, NULL);
+  if (elf == NULL)
+    {
+      fprintf (stderr, "cannot open ELF file: %s",
+	       elf_errmsg (-1));
+      close (fd);
+      return -1;
+    }
+  if (elf_kind (elf) != ELF_K_ELF
+      || gelf_getehdr (elf, &ehdr) == NULL
+      || (ehdr.e_type != ET_DYN
+	  && ehdr.e_type != ET_EXEC
+	  && ehdr.e_type != ET_REL))
+    {
+      elf_end (elf);
+      close (fd);
+      return -1;
+    }
+  for (i = 0; i < ehdr.e_shnum; ++i)
+    {
+      Elf_Scn *s = elf_getscn (elf, i);
+      GElf_Shdr shdr;
+      Elf_Data *data;
+      Elf32_Nhdr nh;
+      Elf_Data dst =
+	{
+	  .d_version = EV_CURRENT, .d_type = ELF_T_NHDR,
+	  .d_buf = &nh, .d_size = sizeof nh
+	};
+      Elf_Data src = dst;
+
+      gelf_getshdr (s, &shdr);
+      if (shdr.sh_type != SHT_NOTE
+	  || !(shdr.sh_flags & SHF_ALLOC))
+	continue;
+
+      /* Look for a build-ID note here.  */
+      data = elf_rawdata (s, NULL);
+      src.d_buf = data->d_buf;
+      assert (sizeof (Elf32_Nhdr) == sizeof (Elf64_Nhdr));
+      while (data->d_buf + data->d_size - src.d_buf > (int) sizeof nh
+	     && elf32_xlatetom (&dst, &src, ehdr.e_ident[EI_DATA]))
+	{
+	  Elf32_Word len = sizeof nh + nh.n_namesz;
+	  len = (len + 3) & ~3;
+
+	  if (nh.n_namesz == sizeof "GNU" && nh.n_type == 3
+	      && !memcmp (src.d_buf + sizeof nh, "GNU", sizeof "GNU"))
+	    {
+	      build_id = data;
+	      build_id_offset = src.d_buf + len - data->d_buf;
+	      build_id_size = nh.n_descsz;
+	      break;
+	    }
+
+	  len += nh.n_descsz;
+	  len = (len + 3) & ~3;
+	  src.d_buf += len;
+	}
+
+      if (build_id != NULL)
+	break;
+    }
+
+  if (build_id == NULL)
+    return -1;
+
+  *id = malloc (build_id_size);
+  *id_size = build_id_size;
+  memcpy (*id, build_id->d_buf + build_id_offset, build_id_size);
+
+  elf_end (elf);
+  close (fd);
+
+  return 0;
+}
+
+
+static rpmTag copyTagsForDebug[] = {
+    RPMTAG_EPOCH,
+    RPMTAG_VERSION,
+    RPMTAG_RELEASE,
+    RPMTAG_LICENSE,
+    RPMTAG_PACKAGER,
+    RPMTAG_DISTRIBUTION,
+    RPMTAG_DISTURL,
+    RPMTAG_VENDOR,
+    RPMTAG_ICON,
+    RPMTAG_URL,
+    RPMTAG_CHANGELOGTIME,
+    RPMTAG_CHANGELOGNAME,
+    RPMTAG_CHANGELOGTEXT,
+    RPMTAG_PREFIXES,
+    RPMTAG_RHNPLATFORM,
+    RPMTAG_OS,
+    RPMTAG_DISTTAG,
+    RPMTAG_CVSID,
+    RPMTAG_ARCH,
+    0
+};
+
+
 int processBinaryFiles(rpmSpec spec, int installSpecialDoc, int test)
 {
     Package pkg;
     int rc = RPMRC_OK;
+    char *buildroot;
     
     check_fileList = newStringBuf();
+    buildroot = rpmGenPath(spec->rootDir, spec->buildRoot, NULL);
     genSourceRpmName(spec);
     
     for (pkg = spec->packages; pkg != NULL; pkg = pkg->next) {
@@ -2250,8 +2378,110 @@ int processBinaryFiles(rpmSpec spec, int installSpecialDoc, int test)
 	rpmlog(RPMLOG_NOTICE, _("Processing files: %s\n"), nvr);
 	free(nvr);
 		   
-	if ((rc = processPackageFiles(spec, pkg, installSpecialDoc, test)) != RPMRC_OK ||
-	    (rc = rpmfcGenerateDepends(spec, pkg)) != RPMRC_OK)
+	if ((rc = processPackageFiles(spec, pkg, installSpecialDoc, test)) != RPMRC_OK)
+	    goto exit;
+
+	/* BEGIN DEBUGPKG */
+#if HAVE_GELF_H && HAVE_LIBELF
+	elf_version(EV_CURRENT);
+       a = headerGetString(pkg->header, RPMTAG_ARCH);
+	if (strcmp(a, "noarch") != 0 && strcmp(a, "src") != 0 && strcmp(a, "nosrc") != 0)
+	  {
+	    Package dbg;
+	    rpmfi fi = pkg->cpioList;
+	    char tmp[1024];
+	    const char *name;
+	    StringBuf files = NULL;
+	    int seen_build_id = 0;
+
+	    /* Check if the current package has files with debug info
+	       and record them.  */
+	    fi = rpmfiInit (fi, 0);
+	    while (rpmfiNext (fi) >= 0)
+	      {
+		const char *base;
+		int i;
+		unsigned char *build_id;
+		size_t build_id_size = 0;
+		struct stat sbuf;
+
+		name = rpmfiFN (fi);
+		/* Skip leading buildroot.  */
+		base = name + strlen (buildroot);
+		/* Pre-pend %buildroot/usr/lib/debug and append .debug.  */
+		snprintf (tmp, 1024, "%s/usr/lib/debug%s.debug",
+			  buildroot, base);
+		/* If that file exists we have debug information for it.  */
+		if (access (tmp, F_OK) != 0)
+		  continue;
+
+		/* Append the file list preamble.  */
+		if (!files)
+		  {
+		    files = newStringBuf();
+		    appendStringBuf(files, "%defattr(-,root,root)\n");
+		    appendStringBuf(files, "%dir /usr/lib/debug\n");
+		  }
+		/* Add the files main debug-info file.  */
+		snprintf (tmp, 1024, "/usr/lib/debug/%s.debug\n", base);
+		appendStringBuf(files, tmp);
+
+		/* Do not bother to check build-ids for symbolic links.
+		   We'll handle them for the link target.  */
+		if (lstat (name, &sbuf) == -1
+		    || S_ISLNK (sbuf.st_mode))
+		  continue;
+
+		/* Try to gather the build-id from the binary.  */
+		if (getELFBuildId (name, &build_id, &build_id_size) == -1)
+		  continue;
+
+		/* If we see build-id links for the first time add the
+		   directory.  */
+		if (!seen_build_id)
+		  appendStringBuf(files, "%dir /usr/lib/debug/.build-id\n");
+
+		/* From the build-id construct the two links pointing back
+		   to the debug information file and the binary.  */
+		snprintf (tmp, 1024, "/usr/lib/debug/.build-id/%02x/",
+			  build_id[0]);
+		for (i = 1; i < build_id_size; ++i)
+		  sprintf (tmp + strlen (tmp), "%02x", build_id[i]);
+		appendStringBuf(files, tmp);
+		appendStringBuf(files, "\n");
+		appendStringBuf(files, tmp);
+		appendStringBuf(files, ".debug\n");
+
+		free (build_id);
+	      }
+
+	    /* If there are debuginfo files for this package add a
+	       new debuginfo package.  */
+	    if (files)
+	      {
+		dbg = newPackage (spec);
+		headerNVR (pkg->header, &name, NULL, NULL);
+		/* Set name, summary and group.  */
+		snprintf (tmp, 1024, "%s-debuginfo", name);
+		headerPutString(dbg->header, RPMTAG_NAME, tmp);
+		snprintf (tmp, 1024, "Debug information for package %s", name);
+		headerPutString(dbg->header, RPMTAG_SUMMARY, tmp);
+		snprintf (tmp, 1024, "This package provides debug information for package %s.\n"
+			  "Debug information is useful when developing applications that use this\n"
+			  "package or when debugging this package.", name);
+		headerPutString(dbg->header, RPMTAG_DESCRIPTION, tmp);
+		headerPutString(dbg->header, RPMTAG_GROUP, "Development/Debug");
+		/* Inherit other tags from parent.  */
+		headerCopyTags (pkg->header, dbg->header, copyTagsForDebug);
+
+		/* Build up the files list.  */
+		dbg->fileList = files;
+	      }
+	  }
+#endif
+	/* END DEBUGPKG */
+
+	if ((rc = rpmfcGenerateDepends(spec, pkg)) != RPMRC_OK)
 	    goto exit;
 
 	a = headerGetString(pkg->header, RPMTAG_ARCH);

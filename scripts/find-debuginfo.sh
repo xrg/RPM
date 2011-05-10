@@ -275,19 +275,11 @@ while read nlinks inum f; do
   fi
 done || exit
 
-# For each symlink whose target has a .debug file,
-# make a .debug symlink to that file.
-find $RPM_BUILD_ROOT ! -path "${debugdir}/*" -type l -print |
-while read f
-do
-  t=$(readlink -m "$f").debug
-  f=${f#$RPM_BUILD_ROOT}
-  t=${t#$RPM_BUILD_ROOT}
-  if [ -f "$debugdir$t" ]; then
-    echo "symlinked /usr/lib/debug$t to /usr/lib/debug${f}.debug"
-    debug_link "/usr/lib/debug$t" "${f}.debug"
-  fi
-done
+# We used to make a .debug symlink for each symlink whose target
+# has a .debug file to that file.  This is not necessary because
+# the debuglink section contains only the destination of those links.
+# Creating those links anyway results in debuginfo packages for
+# devel packages just because of the .so symlinks in them.
 
 if [ -s "$SOURCEFILE" ]; then
   mkdir -p "${RPM_BUILD_ROOT}/usr/src/debug"
