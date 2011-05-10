@@ -167,7 +167,7 @@ sub process_file {
 	
 	$version= $1; 
       }
-      $require{$package}=$version;
+      $require{$package} ||= $version;
     }
   
     # Allow someone to have a variable that defines virtual packages
