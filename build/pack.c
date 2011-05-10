@@ -375,7 +375,9 @@ rpmRC writeRPM(Header *hdrp, unsigned char ** pkgidp, const char *fileName,
 	const char *compr = NULL;
 	headerPutString(h, RPMTAG_PAYLOADFORMAT, "cpio");
 
-	if (rstreq(s+1, "gzdio")) {
+	if (rstreq(s+1, "ufdio")) {
+	    compr = NULL;
+	} else if (rstreq(s+1, "gzdio")) {
 	    compr = "gzip";
 #if HAVE_BZLIB_H
 	} else if (rstreq(s+1, "bzdio")) {
@@ -398,7 +400,8 @@ rpmRC writeRPM(Header *hdrp, unsigned char ** pkgidp, const char *fileName,
 	    goto exit;
 	}
 
-	headerPutString(h, RPMTAG_PAYLOADCOMPRESSOR, compr);
+	if (compr)
+	    headerPutString(h, RPMTAG_PAYLOADCOMPRESSOR, compr);
 	buf = xstrdup(rpmio_flags);
 	buf[s - rpmio_flags] = '\0';
 	headerPutString(h, RPMTAG_PAYLOADFLAGS, buf+1);
