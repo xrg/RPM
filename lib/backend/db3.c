@@ -551,6 +551,9 @@ static int db3open(rpmdb rpmdb, rpmTag rpmtag, dbiIndex * dbip)
      */
     if (dbi->dbi_use_dbenv) {
 
+	/* always use fcntl lock */
+	dbi->dbi_eflags |= DB_PRIVATE;
+
 	if (access(dbhome, W_OK) == -1) {
 
 	    /* dbhome is unwritable, don't attempt DB_CREATE on DB->open ... */
