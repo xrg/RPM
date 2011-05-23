@@ -143,7 +143,6 @@ rpm2cpio_LDADD +=	@WITH_NSS_LIB@ @WITH_POPT_LIB@ @WITH_ZLIB_LIB@
 
 
 if LIBELF
-if LIBDWARF
 rpmconfig_SCRIPTS += scripts/find-debuginfo.sh
 
 rpmlibexec_PROGRAMS +=	debugedit
@@ -155,7 +154,6 @@ rpmlibexec_PROGRAMS +=	elfdeps
 elfdeps_SOURCES =	tools/elfdeps.c
 elfdeps_LDADD =		rpmio/librpmio.la
 elfdeps_LDADD +=	@WITH_LIBELF_LIB@ @WITH_POPT_LIB@
-endif
 endif
 
 rpmlibexec_PROGRAMS +=	javadeps
