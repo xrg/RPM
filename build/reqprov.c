@@ -75,6 +75,16 @@ int addReqProv(Header h, rpmTagVal tagN,
 	indextag = RPMTAG_TRIGGERINDEX;
 	extra = Flags & RPMSENSE_TRIGGER;
 	break;
+    case RPMTAG_SUGGESTSNAME:
+	versiontag = RPMTAG_SUGGESTSVERSION;
+	flagtag = RPMTAG_SUGGESTSFLAGS;
+	extra = Flags & _ALL_REQUIRES_MASK;
+	break;
+    case RPMTAG_ENHANCESNAME:
+	versiontag = RPMTAG_ENHANCESVERSION;
+	flagtag = RPMTAG_ENHANCESFLAGS;
+	extra = Flags & _ALL_REQUIRES_MASK;
+	break;
     case RPMTAG_REQUIRENAME:
     default:
 	tagN = RPMTAG_REQUIRENAME;

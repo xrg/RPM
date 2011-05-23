@@ -217,14 +217,14 @@ typedef enum rpmTag_e {
     RPMTAG_PRETRANSPROG		= 1153,	/* s */
     RPMTAG_POSTTRANSPROG	= 1154,	/* s */
     RPMTAG_DISTTAG		= 1155,	/* s */
-    RPMTAG_SUGGESTSNAME		= 1156,	/* s[] extension (unimplemented) */
-#define	RPMTAG_SUGGESTS RPMTAG_SUGGESTSNAME	/* s[] (unimplemented) */
-    RPMTAG_SUGGESTSVERSION	= 1157,	/* s[] extension (unimplemented) */
-    RPMTAG_SUGGESTSFLAGS	= 1158,	/* i[] extension (unimplemented) */
-    RPMTAG_ENHANCESNAME		= 1159,	/* s[] extension placeholder (unimplemented) */
-#define	RPMTAG_ENHANCES RPMTAG_ENHANCESNAME	/* s[] (unimplemented) */
-    RPMTAG_ENHANCESVERSION	= 1160,	/* s[] extension placeholder (unimplemented) */
-    RPMTAG_ENHANCESFLAGS	= 1161,	/* i[] extension placeholder (unimplemented) */
+    RPMTAG_SUGGESTSNAME		= 1156,	/* s[] extension */
+#define	RPMTAG_SUGGESTS RPMTAG_SUGGESTSNAME	/* s[] */
+    RPMTAG_SUGGESTSVERSION	= 1157,	/* s[] extension */
+    RPMTAG_SUGGESTSFLAGS	= 1158,	/* i[] extension */
+    RPMTAG_ENHANCESNAME		= 1159,	/* s[] extension */
+#define	RPMTAG_ENHANCES RPMTAG_ENHANCESNAME	/* s[] */
+    RPMTAG_ENHANCESVERSION	= 1160,	/* s[] extension */
+    RPMTAG_ENHANCESFLAGS	= 1161,	/* i[] extension */
     RPMTAG_PRIORITY		= 1162, /* i[] extension placeholder (unimplemented) */
     RPMTAG_CVSID		= 1163, /* s (unimplemented) */
 #define	RPMTAG_SVNID	RPMTAG_CVSID	/* s (unimplemented) */

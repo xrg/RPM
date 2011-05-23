@@ -48,7 +48,7 @@ enum rpmsenseFlags_e {
     RPMSENSE_RPMLIB = (1 << 24),	/*!< rpmlib(feature) dependency. */
     RPMSENSE_TRIGGERPREIN = (1 << 25),	/*!< %triggerprein dependency. */
     RPMSENSE_KEYRING	= (1 << 26),
-    /* bit 27 unused */
+    RPMSENSE_STRONG     = (1 << 27),
     RPMSENSE_CONFIG	= (1 << 28)
 };
 
@@ -69,6 +69,7 @@ typedef rpmFlags rpmsenseFlags;
     RPMSENSE_SCRIPT_VERIFY | \
     RPMSENSE_FIND_REQUIRES | \
     RPMSENSE_MISSINGOK | \
+    RPMSENSE_STRONG | \
     RPMSENSE_RPMLIB | \
     RPMSENSE_KEYRING | \
     RPMSENSE_PRETRANS | \
