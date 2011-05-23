@@ -34,6 +34,7 @@ perllist=()
 pythonlist=($(printf "%s\n" "${filelist[@]}" | egrep '/usr/lib[^/]*/python.\..'))
 tcllist=()
 monolist=($(printf "%s\n" "${filelist[@]}" | egrep "\\.(exe|dll)(\\.config)?\$"))
+pkgconfiglist=($(printf "%s\n" "${filelist[@]}" | egrep '\.pc$'))
 
 #
 # --- Alpha does not mark 64bit dependencies
@@ -141,6 +142,11 @@ done | sort -u
 if [ -x $MONO_PREFIX/bin/mono -a -n "$monolist" ] ; then
     printf "%s\n" "${monolist[@]}" | MONO_PATH=$MONO_PREFIX/lib${MONO_PATH:+:$MONO_PATH} prefix=$MONO_PREFIX $MONO_PREFIX/bin/mono-find-requires || echo "WARNING: MONO RPM REQUIRES WERE NOT GENERATED FOR THIS BUILD!!" 1>&2
 fi
+
+#
+# --- pkgconfig requires
+[ -x /usr/lib/rpm/pkgconfigdeps.sh -a -n "$pkgconfiglist" ] &&
+     printf "%s\n" "${pkgconfiglist[@]}" | /usr/lib/rpm/pkgconfigdeps.sh -R | sort -u
 
 #
 # --- Kernel module imported symbols
