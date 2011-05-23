@@ -15,4 +15,6 @@ const char * rpmugGname(gid_t gid);
 
 void rpmugFree(void);
 
+void rpmugChroot(int in);
+
 #endif /* _RPMUG_H */

@@ -66,6 +66,7 @@ int rpmChrootIn(void)
     } else if (rootState.chrootDone == 0) {
 	if (chdir("/") == 0 && chroot(rootState.rootDir) == 0) {
 	    rootState.chrootDone = 1;
+	    rpmugChroot(1);
 	} else {
 	    rpmlog(RPMLOG_ERR, _("Unable to change root directory: %m\n"));
 	    rc = -1;
@@ -91,6 +92,7 @@ int rpmChrootOut(void)
     } else if (rootState.chrootDone == 1) {
 	if (chroot(".") == 0 && fchdir(rootState.cwd) == 0) {
 	    rootState.chrootDone = 0;
+	    rpmugChroot(0);
 	} else {
 	    rpmlog(RPMLOG_ERR, _("Unable to restore root directory: %m\n"));
 	    rc = -1;
