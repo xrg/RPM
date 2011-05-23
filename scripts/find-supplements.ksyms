@@ -1,6 +1,8 @@
 #! /bin/sh
 
+SPECFILE=${RPMBUILD_SPECFILE:-/usr/src/packages/SOURCES/$1.spec}
 IFS=$'\n'
+PACKAGE=$1
 
 case "$1" in
 kernel-module-*)    ;; # Fedora kernel module package names start with
@@ -46,11 +48,54 @@ combine_modaliases() {
     print_modaliases "$class" "$variants" "$pos"
 }
 
-for module in $(grep -E '/lib/modules/.+\.ko$'); do
-    vermagic=$(/sbin/modinfo -F vermagic "$module")
-    krel=${vermagic%% *}
-    /sbin/modinfo -F alias "$module" \
-    | sed -nre "s,(.+:.+),modalias(kernel-${krel##*-}:\\1),p"
-done \
+aliases_of_filelist() {
+    modlist=$(mktemp)
+    have_module=1
+    for module in $(grep -E '/lib/modules/.+\.ko$'); do
+	vermagic=$(/sbin/modinfo -F vermagic "$module")
+	krel=${vermagic%% *}
+	if ! test -x /sbin/modinfo; then
+		echo "ERROR: add module-init-tools to BuildRequires" >&2
+		exit 1
+	fi
+	have_module=0
+	/sbin/modinfo -F alias "$module" \
+	| sed -nre "s,(.+:.+),modalias(kernel-${krel##*-}:\\1),p" | tee -a $modlist
+    done
+    if ! test -s "$modlist" && test $have_module = 0; then
+        echo "packageand(kernel-${krel##*-}:$PACKAGE)"
+    fi
+    rm -f $modlist
+}
+
+aliases_of_specfile_macro() {
+    declare regex
+
+    regex=$(
+	set -o noglob
+	set -- $(sed -ne 's:^%supplements_kernel_module[ \t]::p' \
+		     $SPECFILE)
+	while [ $# -ge 1 ]; do
+	    regex=$(echo "$1" \
+		    | sed -e 's:[.]:\\.:g' \
+			  -e 's:?:.:g' \
+			  -e 's:\*:.*:g' \
+			  -e 's:\\:\\\\:g')
+	    echo -n "^$regex\$"
+	    [ $# -ge 2 ] && echo -n "|"
+	    shift
+	done
+    )
+
+    if [ -n "$regex" ]; then
+	awk '
+	$1 == "alias" && $3 ~ regex { print $2 }
+	' regex="$regex" /lib/modules/*/modules.alias
+    fi
+}
+
+(   aliases_of_filelist
+    aliases_of_specfile_macro "$1"
+) \
 | sort -u \
 | combine_modaliases
