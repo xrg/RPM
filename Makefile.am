@@ -174,6 +174,10 @@ bin_PROGRAMS +=		rpmqpack
 rpmqpack_SOURCES =      rpmqpack.c
 rpmqpack_LDADD =        lib/librpm.la
 
+bin_PROGRAMS +=	convertdb1
+convertdb1_SOURCES =	tools/convertdb1.c
+convertdb1_LDADD =	lib/librpm.la
+
 rpmconfig_DATA = rpmrc
 rpmrc: $(top_srcdir)/rpmrc.in
 	@$(SED) \
