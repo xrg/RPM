@@ -11,7 +11,7 @@ filelist=($(printf "%s\n" "${filelist[@]}" | grep -v "/usr/lib/debug/"))
 solist=($(printf "%s\n" "${filelist[@]}" | grep "\\.so" | grep -v "^/lib/ld.so" | \
 	  tr '\n' '\0' | xargs -0 -r file -L | grep "ELF.*shared object" | \
 	  cut -d: -f1))
-pythonlist=
+pythonlist=($(printf "%s\n" "${filelist[@]}" | egrep '/usr/bin/python.\..$'))
 tcllist=
 monolist=($(printf "%s\n" "${filelist[@]}" | egrep "\\.(exe|dll)\$"))
 mimetypelist=($(printf "%s\n" "${filelist[@]}" | egrep "\\.(desktop)\$"))
@@ -55,8 +55,8 @@ done | sort -u
 
 #
 # --- Python modules.
-[ -x /usr/lib/rpm/python.prov -a -n "$pythonlist" ] &&
-    printf "%s\n" "${pythonlist[@]}" | /usr/lib/rpm/python.prov | sort -u
+[ -x /usr/lib/rpm/pythondeps.sh -a -n "$pythonlist" ] &&
+    printf "%s\n" "${pythonlist[@]}" | /usr/lib/rpm/pythondeps.sh -P | sort -u
 
 #
 # --- Tcl modules.
