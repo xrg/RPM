@@ -448,8 +448,13 @@ retry:
     }
 
 unsatisfied:
-    rc = 1;	/* dependency is unsatisfied */
-    rpmdsNotify(dep, NULL, rc);
+    if (rpmdsFlags(dep) & RPMSENSE_MISSINGOK) {
+	rc = 0; /* dependency is unsatisfied, but just a hint. */
+	rpmdsNotify(dep, _("(hint skipped)"), rc);
+    } else {
+	rc = 1;	/* dependency is unsatisfied */
+	rpmdsNotify(dep, NULL, rc);
+    }
 
 exit:
     return rc;
