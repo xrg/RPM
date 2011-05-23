@@ -671,6 +671,63 @@ static rpmRC checkPackages(char *pkgcheck)
     return RPMRC_OK;
 }
 
+static void trimChangelog(Header h)
+{
+    static int oneshot;
+    static int cuttime, minnum, maxnum;
+    int * times;
+    char ** names = 0, ** texts = 0;
+    int i, keep, count = 0;
+
+    if (!oneshot) {
+	char *binarychangelogtrim = rpmExpand("%{?_binarychangelogtrim}", NULL);
+	oneshot = 1;
+	if (binarychangelogtrim && *binarychangelogtrim) {
+	    maxnum = atoi(binarychangelogtrim);
+	    binarychangelogtrim = strchr(binarychangelogtrim, ',');
+	    if (binarychangelogtrim)
+	      binarychangelogtrim++;
+	}
+	if (binarychangelogtrim && *binarychangelogtrim) {
+	    cuttime = atoi(binarychangelogtrim);
+	    binarychangelogtrim = strchr(binarychangelogtrim, ',');
+	    if (binarychangelogtrim)
+	      binarychangelogtrim++;
+	}
+	if (binarychangelogtrim && *binarychangelogtrim) {
+	    minnum = atoi(binarychangelogtrim);
+	    binarychangelogtrim = strchr(binarychangelogtrim, ',');
+	}
+    }
+    if (!cuttime && !minnum && !maxnum) {
+	return;
+    }
+    if (!headerGetEntry(h, RPMTAG_CHANGELOGTIME, NULL, (void **) &times, &count))
+	return;
+    if ((!cuttime || count <= minnum) && (!maxnum || count <= maxnum)) {
+	return;
+    }
+    keep = count;
+    if (maxnum && keep > maxnum)
+	keep = maxnum;
+    if (cuttime) {
+	for (i = 0; i < keep; i++) {
+	    if (i >= minnum && times[i] < cuttime)
+		break;
+	}
+	keep = i;
+    }
+    if (keep >= count)
+	return;
+    headerGetEntry(h, RPMTAG_CHANGELOGNAME, NULL, (void **) &names, &count);
+    headerGetEntry(h, RPMTAG_CHANGELOGTEXT, NULL, (void **) &texts, &count);
+    headerModifyEntry(h, RPMTAG_CHANGELOGTIME, RPM_INT32_TYPE, times, keep);
+    headerModifyEntry(h, RPMTAG_CHANGELOGNAME, RPM_STRING_ARRAY_TYPE, names, keep);
+    headerModifyEntry(h, RPMTAG_CHANGELOGTEXT, RPM_STRING_ARRAY_TYPE, texts, keep);
+    free(names);
+    free(texts);
+}
+
 rpmRC packageBinaries(rpmSpec spec, const char *cookie, int cheating)
 {
     struct cpioSourceArchive_s csabuf;
@@ -680,6 +737,7 @@ rpmRC packageBinaries(rpmSpec spec, const char *cookie, int cheating)
     Package pkg;
     char *pkglist = NULL;
 
+    trimChangelog(spec->packages->header);
     for (pkg = spec->packages; pkg != NULL; pkg = pkg->next) {
 	char *fn;
 
