@@ -119,7 +119,7 @@ static int db_init(rpmdb rdb, const char * dbhome)
     int retry_open = 2;
     struct _dbConfig * cfg = &rdb->cfg;
     /* This is our setup, thou shall not have other setups before us */
-    uint32_t eflags = (DB_CREATE|DB_INIT_MPOOL|DB_INIT_CDB);
+    uint32_t eflags = (DB_CREATE|DB_INIT_MPOOL|DB_INIT_CDB|DB_PRIVATE);
 
     if (rdb->db_dbenv != NULL) {
 	rdb->db_opens++;
