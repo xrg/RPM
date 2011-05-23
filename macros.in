@@ -279,6 +279,16 @@ package or when debugging this package.\
 #
 #%bugurl
 
+#	Configurable distribution tag, same as Disttag: tag in a specfile.
+#	The tag will be used to supply reliable information to tools like
+#	rpmfind.
+#
+# Note: You should not configure with disturl (or build packages with
+# the Disttag: tag) unless you are willing to supply content in a
+# yet-to-be-determined format at the tag specified.
+#
+#%disttag
+
 #	Boolean (i.e. 1 == "yes", 0 == "no") that controls whether files
 #	marked as %doc should be installed.
 #%_excludedocs
