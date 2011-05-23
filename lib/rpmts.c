@@ -159,6 +159,24 @@ int rpmtsVerifyDB(rpmts ts)
     return rc;
 }
 
+int rpmtsHeaderAddDB(rpmts ts, Header h)
+{
+    if (rpmtsOpenDB(ts, (O_RDWR|O_CREAT)))
+	return RPMRC_FAIL;
+    if (rpmdbAdd(rpmtsGetRdb(ts), h) != 0)
+	return RPMRC_FAIL;
+    return RPMRC_OK;
+}
+
+int rpmtsHeaderRemoveDB(rpmts ts, unsigned int hdrNum)
+{
+    if (rpmtsOpenDB(ts, (O_RDWR|O_CREAT)))
+	return RPMRC_FAIL;
+    if (rpmdbRemove(rpmtsGetRdb(ts), hdrNum) != 0)
+	return RPMRC_FAIL;
+    return RPMRC_OK;
+}
+
 /* keyp might no be defined. */
 rpmdbMatchIterator rpmtsInitIterator(const rpmts ts, rpmDbiTagVal rpmtag,
 			const void * keyp, size_t keylen)

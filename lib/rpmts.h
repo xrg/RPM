@@ -264,6 +264,22 @@ int rpmtsRebuildDB(rpmts ts);
 int rpmtsVerifyDB(rpmts ts);
 
 /** \ingroup rpmts
+ * Add a header to the database used by the transaction.
+ * @param ts            transaction set 
+ * @param h             header to add
+ * @return              0 on success
+ */
+int rpmtsHeaderAddDB(rpmts ts, Header h);
+
+/** \ingroup rpmts
+ * Remove a header from the database used by the transaction.
+ * @param ts            transaction set 
+ * @param hdrNum        index of header to remove
+ * @return              0 on success
+ */
+int rpmtsHeaderRemoveDB(rpmts ts, unsigned int hdrNum);
+
+/** \ingroup rpmts
  * Return transaction database iterator.
  * @param ts		transaction set
  * @param rpmtag	database index tag
