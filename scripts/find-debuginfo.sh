@@ -186,7 +186,8 @@ make_id_link()
 get_debugfn()
 {
   dn=$(dirname "${1#$RPM_BUILD_ROOT}")
-  bn=$(basename "$1" .debug).debug
+# Do not strip existing .debug suffixes
+  bn=$(basename "$1").debug
 
   debugdn=${debugdir}${dn}
   debugfn=${debugdn}/${bn}
