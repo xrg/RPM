@@ -187,8 +187,8 @@ set -o pipefail
 strict_error=ERROR
 $strict || strict_error=WARNING
 
-# Strip ELF binaries
-find $RPM_BUILD_ROOT ! -path "${debugdir}/*.debug" -type f \( -perm +111 -or -name "*.so*" -or -name "*.ko" \) -print 0 | sort -z |
+# Strip ELF binaries (and no static libraries)
+find $RPM_BUILD_ROOT ! -path "${debugdir}/*.debug" -type f \( -perm +111 -or -name "*.so*" -or -name "*.ko" \) ! -name "*.a" -print0 | sort -z |
 xargs --no-run-if-empty -0 stat -c '%h %D_%i %n' |
 while read nlinks inum f; do
   case $(objdump -h $f 2>/dev/null | egrep -o '(debug[\.a-z_]*|gnu.version)') in
@@ -300,8 +300,14 @@ if [ -d "${RPM_BUILD_ROOT}/usr/lib" -o -d "${RPM_BUILD_ROOT}/usr/src" ]; then
 
   (cd "${RPM_BUILD_ROOT}/usr"
    test ! -d lib/debug || find lib/debug ! -type d
-   test ! -d src/debug || find src/debug -mindepth 1 -maxdepth 1
   ) | sed 's,^,/usr/,' >> "$LISTFILE"
+fi
+
+: > "$SOURCEFILE"
+if [ -d "${RPM_BUILD_ROOT}/usr/src" ]; then
+  (cd "${RPM_BUILD_ROOT}/usr"
+   test ! -d src/debug || find src/debug -mindepth 1 -maxdepth 1
+  ) | sed 's,^,/usr/,' >> "$SOURCEFILE"
 fi
 
 # Append to $1 only the lines from stdin not already in the file.
