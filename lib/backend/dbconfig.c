@@ -58,8 +58,10 @@ static const struct poptOption rdbOptions[] = {
  { "mp_size",	0,POPT_ARG_INT,		&staticcfg.db_cachesize, 0,
 	NULL, NULL },
 
+#if 0
  { "nofsync",	0,POPT_ARG_NONE,	&staticcfg.db_no_fsync, 0,
 	NULL, NULL },
+#endif
 
  /* Per-dbi options */
  { "nommap",	0,POPT_BIT_SET,		&staticdbi.dbi_oflags, DB_NOMMAP,
@@ -68,6 +70,8 @@ static const struct poptOption rdbOptions[] = {
  { "nodbsync",	0,POPT_ARG_NONE,	&staticdbi.dbi_no_dbsync, 0,
 	NULL, NULL },
  { "lockdbfd",	0,POPT_ARG_NONE,	&staticdbi.dbi_lockdbfd, 0,
+	NULL, NULL },
+ { "nofsync",	0,POPT_BIT_SET,		&staticdbi.dbi_oflags, DB_NOFSYNC,
 	NULL, NULL },
 
     POPT_TABLEEND
