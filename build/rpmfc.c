@@ -1312,7 +1312,7 @@ rpmRC rpmfcGenerateDepends(const rpmSpec spec, Package pkg)
 	goto exit;
 
     /* Add per-file colors(#files) */
-    if (rpmtdFromArgi(&td, RPMTAG_FILECOLORS, fc->fcolor)) {
+    if (rpmExpandNumeric("%{?_transaction_color}") != 0 && rpmtdFromArgi(&td, RPMTAG_FILECOLORS, fc->fcolor)) {
 	rpm_color_t *fcolor;
 	assert(rpmtdType(&td) == RPM_INT32_TYPE);
 	/* XXX Make sure only primary (i.e. Elf32/Elf64) colors are added. */
