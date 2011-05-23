@@ -178,22 +178,22 @@
 
 #	Template for debug information sub-package.
 %debug_package \
-%ifnarch noarch\
 %global __debug_package 1\
-%package debug\
+%package debuginfo\
 Summary: Debug information for package %{name}\
 Group: Development/Debug\
 AutoReqProv: 0\
-%description debug\
+#Requires: %{?!debug_package_requires:%{name} = %{version}-%{release}}%{?debug_package_requires}\
+%description debuginfo\
 This package provides debug information for package %{name}.\
 Debug information is useful when developing applications that use this\
 package or when debugging this package.\
-%files debug -f debugfiles.list\
+%files debuginfo -f debugfiles.list\
 %defattr(-,root,root)\
-%endif\
 %{nil}
 
-%_defaultdocdir		%{_datadir}/doc
+%_defaultdocdir		%{_datadir}/doc/packages
+%_docdir_fmt          %%{NAME}
 
 #	The path to the gzip executable (legacy, use %{__gzip} instead).
 %_gzipbin		%{__gzip}
@@ -230,7 +230,7 @@ package or when debugging this package.\
 %_tmppath		%{_var}/tmp
 
 #	Path to top of build area.
-%_topdir		%{getenv:HOME}/rpmbuild
+%_topdir		%{_usrsrc}/packages
 
 #	The path to the unzip executable (legacy, use %{__unzip} instead).
 %_unzipbin		%{__unzip}
@@ -333,7 +333,7 @@ package or when debugging this package.\
 #		"w7.lzdio"	lzma-alone level 7, lzma's default
 #
 #%_source_payload	w9.gzdio
-#%_binary_payload	w9.gzdio
+%_binary_payload	w5.lzdio
 
 #	Algorithm to use for generating file checksum digests on build.
 #	If not specified or 0, MD5 is used.
@@ -463,16 +463,22 @@ print (t)\
 # Undefined, missing or %{nil} will use package content (if available).
 %_verify_file_context_path 	%{__file_context_path}
 
+# maxnum,cuttime,minnum
+# 2009/03/01 (SLES11 GA)
+%_binarychangelogtrim 0,1235862000,10
+
 #
 # Path to scripts to autogenerate package dependencies,
 #
 # Note: Used iff _use_internal_dependency_generator is zero.
 #%__find_provides	%{_rpmconfigdir}/rpmdeps --provides
 #%__find_requires	%{_rpmconfigdir}/rpmdeps --requires
-%__find_provides	%{_rpmconfigdir}/find-provides
-%__find_requires	%{_rpmconfigdir}/find-requires
+%__find_provides	%{_rpmconfigdir}/find-provides %name
+%__find_requires	%{_rpmconfigdir}/find-requires %name
 #%__find_conflicts	???
 #%__find_obsoletes	???
+#%__find_supplements	???
+#%__find_enhances	???
 
 # 
 # Path to file attribute classifications for automatic dependency 
@@ -535,10 +541,10 @@ print (t)\
 # Misc BDB tuning options
 %__dbi_other			mp_mmapsize=128Mb mp_size=64Mb
 
-%_dbi_config			%{?__dbi_other}
+%_dbi_config			%{?__dbi_other} nofsync
 
 # "Packages" should have shared/exclusive fcntl(2) lock using "lockdbfd".
-%_dbi_config_Packages		%{?_dbi_config} lockdbfd
+%_dbi_config_Packages		%{?__dbi_other} lockdbfd
 
 #==============================================================================
 # ---- GPG/PGP/PGP5 signature macros.
@@ -857,7 +863,7 @@ print (t)\
 %_build_vendor		%{_host_vendor}
 %_build_os		%{_host_os}
 %_host			@host@
-%_host_alias		@host_alias@%{nil}
+%_host_alias		@host@%{nil}
 %_host_cpu		@host_cpu@
 %_host_vendor		@host_vendor@
 %_host_os		@host_os@
@@ -1020,6 +1026,181 @@ done \
 %python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; import sys; sys.stdout.write(get_python_lib(1))")
 %python_version %(%{__python} -c "import sys; sys.stdout.write(sys.version[:3])")
 
+# More useful perl macros (from Raul Dias <rsd@swi.com.br>)
+#
+%perl_version		%(perl -V:version | sed "s!.*='!!;s!'.*!!")
+%perl_man1ext		%(perl -V:man1ext | sed "s!.*='!!;s!'.*!!")
+%perl_man3ext		%(perl -V:man3ext | sed "s!.*='!!;s!'.*!!")
+%perl_man1dir		%(perl -V:man1dir | sed "s!.*='!!;s!'.*!!")
+%perl_man3dir		%(perl -V:man3dir | sed "s!.*='!!;s!'.*!!")
+%perl_installman1dir	%(perl -V:installman1dir | sed "s!.*='!!;s!'.*!!")
+%perl_installman3dir	%(perl -V:installman3dir | sed "s!.*='!!;s!'.*!!")
+%perl_installarchlib	%(perl -V:installarchlib | sed "s!.*='!!;s!'.*!!")
+%perl_prefix		%{buildroot}
+
+#------------------------------------------------------------------------------
+# Python specific macro definitions (originally from PLD).
+#
+%py_ver			%(python -c "import sys; v=sys.version_info[:2]; print '%%d.%%d'%%v" 2>/dev/null || echo PYTHON-NOT-FOUND)
+%py_prefix		%(python -c "import sys; print sys.prefix" 2>/dev/null || echo PYTHON-NOT-FOUND)
+%py_libdir		%{py_prefix}/%{_lib}/python%{py_ver}
+%py_incdir		%{py_prefix}/include/python%{py_ver}
+%py_sitedir		%{py_libdir}/site-packages
+%py_compile(O)	\
+find %1 -name '*.pyc' -exec rm -f {} \\; \
+python -c "import sys, os, compileall; br='%{buildroot}'; compileall.compile_dir(sys.argv[1], ddir=br and (sys.argv[1][len(os.path.abspath(br)):]+'/') or None)" %1 \
+%{-O: \
+find %1 -name '*.pyo' -exec rm -f {} \\; \
+python -O -c "import sys, os, compileall; br='%{buildroot}'; compileall.compile_dir(sys.argv[1], ddir=br and (sys.argv[1][len(os.path.abspath(br)):]+'/') or None)" %1 \
+}
+%py_requires(d) \
+%define minver %py_ver \
+%define maxver %(python -c "import sys; a,b=sys.version_info[:2]; print '%%d.%%d'%%(a,b+1)" 2>/dev/null || echo PYTHON-NOT-FOUND) \
+BuildRequires: python %{-d:python-devel} \
+PreReq: python >= %minver, python < %maxver
+
+#------------------------------------------------------------------------------
+#
+# RPM macros for Java applications.
+#
+# JPackage Project  <http://www.jpackage.org/>
+#   David Walluck   <david@anti-microsoft.org>
+#   Ville Skyttä    <ville.skytta@iki.fi>
+#   Nicolas Mailhot <Nicolas.Mailhot@laPoste.net>
+#
+# $Id: macros.jpackage,v 1.1.2.5 2003/08/30 13:24:58 scop Exp $
+#
+
+# ---- default Java directories
+
+#
+# Root directory where all Java VMs/SDK/JREs are installed.
+#
+%_jvmdir	%{_libdir}/jvm
+
+#
+# Root directory where all Java VMs/SDK/JREs expose their jars
+#
+%_jvmjardir	%{_libdir}/jvm-exports
+
+#
+# Root directory for all Java VM/SDK/JRE's private things.
+#
+%_jvmprivdir	%{_libdir}/jvm-private
+
+#
+# Directory where arch and version independent jars are installed.
+# This has already been integrated in RH macros following our request.
+#
+# By extension:
+# %{_javadir}-ext:
+#   - version dependent jars
+# %{_javadir}-x.y.z:
+#   - jars for Java standard x.y.z (usually symlinks to  %{_javadir}-ext)
+# %{_javadir}-utils:
+#   - Java-related scripts
+#
+# To simplify things only %{_javadir} is defined.
+#
+%_javadir        %{_datadir}/java
+
+#
+# Directory where arch-specific (JNI) version-independent jars are installed.
+#
+# By extension:
+# %{_jnidir}-ext:
+#   - version dependent jars
+# %{_jnidir}-x.y.z:
+#   - jars for Java standard x.y.z (usually symlinks to  %{_jnidir}-ext)
+# To simplify things only %{_jnidir} is defined.
+#
+%_jnidir        %{_libdir}/java
+
+#
+# Root directory where all javadoc is installed. Also already in RH macros.
+#
+%_javadocdir     %{_datadir}/javadoc
+
+#
+# Current default JVM home.
+#
+%java_home      %(. %{_javadir}-utils/java-functions; set_jvm; echo $JAVA_HOME)
+
+# ---- default Java commands
+
+%ant            JAVA_HOME=%{java_home} ant
+%jar            %{java_home}/bin/jar
+%java           %(. %{_javadir}-utils/java-functions; set_javacmd; echo $JAVACMD)
+%javac          %{java_home}/bin/javac
+%javadoc        %{java_home}/bin/javadoc
+
+# ---- Java extension handling macros
+
+#
+# add_jvm_extension should be used in %install by extension packages to declare
+# what extension jars they provide.
+#
+# For example a package that provides foo.jar which is the bar extension
+# under java 1.2 and 1.3 should do a:
+#
+#   %install
+#   ... # create foo.jar in %{javadir}-ext
+#   %add_jvm_extension  foo bar 1.2 1.3
+#
+#   %files
+#   %{javadir}-ext/foo.jar
+#   %{javadir}-*/bar.jar
+#
+%add_jvm_extension JAVA_LIBDIR=%{buildroot}/%{_javadir}	%{_bindir}/jvmjar -l
+
+#
+# Standard JPackage script
+#
+# This is kind of tasteless and should be moved to an external template
+#
+# %1	main class
+# %2	flags
+# %3	options
+# %4	jars (separated by ':')
+# %5    the name of script you wish to create
+#
+%jpackage_script() \
+install -d -m 755 $RPM_BUILD_ROOT%{_bindir}\
+cat > $RPM_BUILD_ROOT%{_bindir}/%5 << EOF \
+#!/bin/sh\
+#\
+# %{name} script\
+# JPackage Project <http://www.jpackage.org/>\
+\
+# Source functions library\
+. %{_javadir}-utils/java-functions\
+\
+# Source system prefs\
+if [ -f %{_sysconfdir}/java/%{name}.conf ] ; then\
+  . %{_sysconfdir}/java/%{name}.conf\
+fi\
+\
+# Source user prefs\
+if [ -f \\$HOME/.%{name}rc ] ; then\
+  . \\$HOME/.%{name}rc\
+fi\
+\
+# Configuration\
+MAIN_CLASS=%1\
+BASE_FLAGS=%2\
+BASE_OPTIONS=%3\
+BASE_JARS="%(echo %4 | sed -e 's,:, ,g')"\
+\
+# Set parameters\
+set_jvm\
+set_classpath \\$BASE_JARS\
+set_flags \\$BASE_FLAGS\
+set_options \\$BASE_OPTIONS\
+\
+# Let's start\
+run "\\$@"\
+EOF
+
 #------------------------------------------------------------------------------
 # arch macro for all Intel i?86 compatibile processors
 #  (Note: This macro (and it's analogues) will probably be obsoleted when
@@ -1030,7 +1211,9 @@ done \
 
 #------------------------------------------------------------------------------
 # arch macro for all supported ARM processors
-%arm	armv3l armv4b armv4l armv4tl armv5tel armv5tejl armv6l armv7l
+%arm	armv3l armv4b armv4l armv4tl armv5b armv5l armv5teb armv5tel armv5tejl armv6l armv7l
+%arml	armv3l armv4l armv5l armv5tel armv6l armv7l
+%armb	armv4b armv5b armv5teb
 
 #------------------------------------------------------------------------------
 # arch macro for all supported Sparc processors
@@ -1070,3 +1253,26 @@ done \
 
 # \endverbatim
 #*/
+
+
+#------------------------------------------------------------------------
+# standard build service macros
+#
+%ext_info .gz
+%ext_man .gz
+
+%info_add() test -x /sbin/install-info -a -f %{?2}%{?!2:%{_infodir}}/%{1}%ext_info && /sbin/install-info --info-dir=%{?2}%{?!2:%{_infodir}} %{?2}%{?!2:%{_infodir}}/%{1}%ext_info \
+%{nil}
+
+%info_del() test -x /sbin/install-info -a ! -f %{?2}%{?!2:%{_infodir}}/%{1}%ext_info && /sbin/install-info --quiet --delete --info-dir=%{?2}%{?!2:%{_infodir}} %{?2}%{?!2:%{_infodir}}/%{1}%ext_info \
+%{nil}
+
+%service_add() %{fillup_and_insserv %{1}}
+%service_del_preun() %{stop_on_removal %{1}}
+%service_del_postun() %{restart_on_update %{1}}
+
+%user_group_add() \
+/usr/sbin/groupadd -o -r %{1} 2>/dev/null || :\
+/usr/sbin/useradd -o -r -g %{1} -d %{2} -s %{3} -c %{4} %{1} 2>/dev/null || :\
+%{nil}
+
