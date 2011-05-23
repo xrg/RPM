@@ -54,6 +54,7 @@ struct rpmfc_s {
 
     rpmds provides;	/*!< (no. provides) package provides */
     rpmds requires;	/*!< (no. requires) package requires */
+    rpmds supplements;	/*!< (no. supplements) package supplements */
 };
 
 struct rpmfcTokens_s {
@@ -481,6 +482,14 @@ static int rpmfcHelper(rpmfc fc, unsigned char deptype, const char * nsdep)
 	dsContext = RPMSENSE_FIND_REQUIRES;
 	tagN = RPMTAG_REQUIRENAME;
 	break;
+    case 'S':
+	if (fc->skipProv)
+	    return 0;
+	depname = "supplements";
+	depsp = &fc->supplements;
+	dsContext = RPMSENSE_FIND_REQUIRES|RPMSENSE_STRONG|RPMSENSE_MISSINGOK;
+	tagN = RPMTAG_ENHANCESNAME;
+	break;
     }
 
     /* If the entire path is filtered out, there's nothing more to do */
@@ -752,6 +761,7 @@ rpmfc rpmfcFree(rpmfc fc)
 
 	fc->provides = rpmdsFree(fc->provides);
 	fc->requires = rpmdsFree(fc->requires);
+	fc->supplements = rpmdsFree(fc->supplements);
     }
     fc = _free(fc);
     return NULL;
@@ -804,6 +814,7 @@ rpmRC rpmfcApply(rpmfc fc)
 	for (ARGV_t fattr = fc->fattrs[fc->ix]; fattr && *fattr; fattr++) {
 	    xx += rpmfcHelper(fc, 'P', *fattr);
 	    xx += rpmfcHelper(fc, 'R', *fattr);
+	    xx += rpmfcHelper(fc, 'S', *fattr);
 	}
     }
 
@@ -844,6 +855,11 @@ rpmRC rpmfcApply(rpmfc fc)
 	case 'R':
 	    ds = rpmdsSingle(RPMTAG_REQUIRENAME, N, EVR, Flags);
 	    dix = rpmdsFind(fc->requires, ds);
+	    ds = rpmdsFree(ds);
+	    break;
+	case 'S':
+	    ds = rpmdsSingle(RPMTAG_ENHANCESNAME, N, EVR, Flags);
+	    dix = rpmdsFind(fc->supplements, ds);
 	    ds = rpmdsFree(ds);
 	    break;
 	}
@@ -1354,6 +1370,18 @@ rpmRC rpmfcGenerateDepends(const rpmSpec spec, Package pkg)
 	    headerPutString(pkg->header, RPMTAG_REQUIRENAME, rpmdsN(pi));
 	    headerPutString(pkg->header, RPMTAG_REQUIREVERSION, rpmdsEVR(pi));
 	    headerPutUint32(pkg->header, RPMTAG_REQUIREFLAGS, &flags, 1);
+	}
+    }
+
+    /* Add Supplements: */
+    if (fc->supplements != NULL && rpmdsCount(fc->supplements) > 0 && !fc->skipReq) {
+	rpmds pi = rpmdsInit(fc->supplements);
+	while (rpmdsNext(pi) >= 0) {
+	    rpmsenseFlags flags = rpmdsFlags(pi);
+	
+	    headerPutString(pkg->header, RPMTAG_ENHANCESNAME, rpmdsN(pi));
+	    headerPutString(pkg->header, RPMTAG_ENHANCESVERSION, rpmdsEVR(pi));
+	    headerPutUint32(pkg->header, RPMTAG_ENHANCESFLAGS, &flags, 1);
 	}
     }
 
