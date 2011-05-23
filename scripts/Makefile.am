@@ -22,6 +22,7 @@ EXTRA_DIST = \
 	ocaml-find-requires.sh ocaml-find-provides.sh \
 	pkgconfigdeps.sh libtooldeps.sh \
 	fontconfig.prov desktop-file.prov script.req \
+	sysvinitdeps.sh \
 	macros.perl macros.php macros.python
 
 rpmconfig_SCRIPTS = \
@@ -38,6 +39,7 @@ rpmconfig_SCRIPTS = \
 	pkgconfigdeps.sh libtooldeps.sh \
 	ocaml-find-requires.sh ocaml-find-provides.sh \
 	fontconfig.prov desktop-file.prov script.req \
+	sysvinitdeps.sh \
 	rpmdb_loadcvt rpm2cpio.sh tcl.req tgpg 
 
 rpmconfig_DATA = \
