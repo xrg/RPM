@@ -1,0 +1,4 @@
+%__ksyms_provides	%{_rpmconfigdir}/find-provides.ksyms %name
+%__ksyms_requires	%{_rpmconfigdir}/find-requires.ksyms %name
+%__ksyms_supplements	%{_rpmconfigdir}/find-supplements.ksyms %name
+%__ksyms_path	(/lib/modules/.*\.ko(\.gz)?)|(/boot/vmlinu[xz].*)$
