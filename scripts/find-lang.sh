@@ -122,6 +122,17 @@ fi
 MO_NAME_NEW=$MO_NAME.tmp.$$
 rm -f $MO_NAME_NEW
 
+# remove languages we do not yet support - but give out statistics
+find $TOP_DIR/usr/share/locale/ -maxdepth 1 -type d | sed 's:'"$TOP_DIR"/usr/share/locale/'::; /^$/d' | while read dir; do
+  if ! rpm -ql filesystem | egrep -q "/usr/share/locale/$dir"$; then
+    find $TOP_DIR/usr/share/locale/$dir -name *.mo | sed 's:'"$TOP_DIR"'::' | while read file; do
+        echo -n "removing translation $file: "
+	msgunfmt "$TOP_DIR/$file" | msgfmt --statistics -o /dev/null -
+    done
+    rm -rf $TOP_DIR/usr/share/locale/$dir
+  fi
+done
+
 find $TOP_DIR -type f -o -type l|sed '
 s:'"$TOP_DIR"'::
 '"$ALL_NAME$MO"'s:\(.*/locale/\)\([^/_]\+\)\(.*\.mo$\):%lang(\2) %doc \1\2\3:
