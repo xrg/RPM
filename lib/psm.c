@@ -723,6 +723,7 @@ static rpmRC rpmpsmStage(rpmpsm psm, pkgStage stage)
 
 	    psm->scriptArg = psm->npkgs_installed + 1;
 
+	    /* this must match rpmNameVersionCompare in depends.c */
 	    mi = rpmtsInitIterator(ts, RPMDBI_NAME, rpmteN(psm->te), 0);
 	    xx = rpmdbSetIteratorRE(mi, RPMTAG_EPOCH, RPMMIRE_STRCMP,
 			rpmteE(psm->te));
@@ -730,9 +731,9 @@ static rpmRC rpmpsmStage(rpmpsm psm, pkgStage stage)
 			rpmteV(psm->te));
 	    xx = rpmdbSetIteratorRE(mi, RPMTAG_RELEASE, RPMMIRE_STRCMP,
 			rpmteR(psm->te));
+	    xx = rpmdbSetIteratorRE(mi, RPMTAG_ARCH, RPMMIRE_STRCMP,
+		    rpmteA(psm->te));
 	    if (tscolor) {
-		xx = rpmdbSetIteratorRE(mi, RPMTAG_ARCH, RPMMIRE_STRCMP,
-			rpmteA(psm->te));
 		xx = rpmdbSetIteratorRE(mi, RPMTAG_OS, RPMMIRE_STRCMP,
 			rpmteO(psm->te));
 	    }
