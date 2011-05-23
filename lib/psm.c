@@ -811,6 +811,7 @@ static rpmRC rpmpsmStage(rpmpsm psm, pkgStage stage)
     case PSM_PROCESS:
 	if (psm->goal == PKG_INSTALL) {
 	    FD_t payload = NULL;
+	    rpmtransFlags oldtsflags;
 
 	    if (rpmtsFlags(ts) & RPMTRANS_FLAG_JUSTDB)	break;
 
@@ -828,6 +829,9 @@ static rpmRC rpmpsmStage(rpmpsm psm, pkgStage stage)
 		break;
 	    }
 
+	    oldtsflags = rpmtsFlags(ts);
+	    if (headerIsEntry(fi->h, RPMTAG_REMOVETID))
+		(void) rpmtsSetFlags(ts, oldtsflags | RPMTRANS_FLAG_NOMD5);
 	    rc = fsmSetup(rpmfiFSM(fi), FSM_PKGINSTALL, ts, psm->te, fi,
 			payload, NULL, &psm->failedFile);
 	    (void) rpmswAdd(rpmtsOp(ts, RPMTS_OP_UNCOMPRESS),
@@ -835,6 +839,8 @@ static rpmRC rpmpsmStage(rpmpsm psm, pkgStage stage)
 	    (void) rpmswAdd(rpmtsOp(ts, RPMTS_OP_DIGEST),
 			fdOp(payload, FDSTAT_DIGEST));
 	    xx = fsmTeardown(rpmfiFSM(fi));
+	    if (headerIsEntry(fi->h, RPMTAG_REMOVETID))
+		(void) rpmtsSetFlags(ts, oldtsflags);
 
 	    saveerrno = errno; /* XXX FIXME: Fclose with libio destroys errno */
 	    xx = Fclose(payload);
