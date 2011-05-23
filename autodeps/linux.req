@@ -19,18 +19,21 @@ fi
 #
 # --- Grab the file manifest and classify files.
 #filelist=`sed "s/['\"]/\\\&/g"`
-filelist=`sed "s/[]['\"*?{}]/\\\\\&/g"`
-exelist=`echo $filelist | xargs -r file | grep -Ev ":.* (commands|script) " | \
-	grep ":.*executable" | cut -d: -f1`
-scriptlist=`echo $filelist | xargs -r file | \
-	grep -E ":.* (commands|script) " | cut -d: -f1`
-liblist=`echo $filelist | xargs -r file | \
-	grep ":.*shared object" | cut -d : -f1`
+#filelist=`sed "s/[]['\"*?{}]/\\\\\&/g"`
+filelist=($(grep -Ev '/usr/doc/|/usr/share/doc/'))
+exelist=($(printf "%s\0" "${filelist[@]}" | xargs -0 -r file | \
+	egrep -v ":.* (commands|script) " | \
+	grep ":.*executable" | cut -d: -f1))
+scriptlist=($(printf "%s\0" "${filelist[@]}" | xargs -0 -r file | \
+	egrep ":.* (commands|script) " | cut -d: -f1))
+liblist=($(printf "%s\0" "${filelist[@]}" | xargs -0 -r file | \
+	grep ":.*shared object" | cut -d : -f1))
 
-interplist=
-perllist=
-pythonlist=
-tcllist=
+interplist=()
+perllist=()
+pythonlist=()
+tcllist=()
+monolist=($(printf "%s\n" "${filelist[@]}" | egrep "\\.(exe|dll)(\\.config)?\$"))
 
 #
 # --- Alpha does not mark 64bit dependencies
@@ -42,12 +45,12 @@ esac
 if [ "$needed" -eq 0 ]; then
 #
 # --- Executable dependency sonames.
-  for f in $exelist; do
-    [ -r $f -a -x $f ] || continue
-    lib64=`if file -L $f 2>/dev/null | \
+  for f in "${exelist[@]}"; do
+    [ -r "$f" -a -x "$f" ] || continue
+    lib64=`if file -L "$f" 2>/dev/null | \
 	grep "ELF 64-bit" >/dev/null; then echo "$mark64"; fi`
-    ldd $f | awk '/=>/ {
-	if ($1 !~ /libNoVersion.so/ && $1 !~ /4[um]lib.so/ && $1 !~ /libredhat-kernel.so/) {
+    ldd "$f" | awk '/=>/ {
+	if ($1 !~ /libNoVersion.so/ && $1 !~ /4[um]lib.so/ && $1 !~ /linux-gate.so/) {
 	    gsub(/'\''"/,"\\&",$1);
 	    printf "%s'$lib64'\n", $1
 	}
@@ -56,12 +59,12 @@ if [ "$needed" -eq 0 ]; then
 
 #
 # --- Library dependency sonames.
-  for f in $liblist; do
-    [ -r $f ] || continue
-    lib64=`if file -L $f 2>/dev/null | \
+  for f in "${liblist[@]}"; do
+    [ -r "$f" ] || continue
+    lib64=`if file -L "$f" 2>/dev/null | \
 	grep "ELF 64-bit" >/dev/null; then echo "$mark64"; fi`
-    ldd $f | awk '/=>/ {
-	if ($1 !~ /libNoVersion.so/ && $1 !~ /4[um]lib.so/ && $1 !~ /libredhat-kernel.so/) {
+    ldd "$f" | awk '/=>/ {
+	if ($1 !~ /libNoVersion.so/ && $1 !~ /4[um]lib.so/ && $1 !~ /linux-gate.so/) {
 	    gsub(/'\''"/,"\\&",$1);
 	    printf "%s'$lib64'\n", $1
 	}
@@ -71,30 +74,30 @@ fi
 
 #
 # --- Script interpreters.
-for f in $scriptlist; do
-    [ -r $f -a -x $f ] || continue
-    interp=`head -n 1 $f | sed -e 's/^\#\![ 	]*//' | cut -d" " -f1`
-    interplist="$interplist $interp"
+for f in "${scriptlist[@]}"; do
+    [ -r "$f" -a -x "$f" ] || continue
+    interp=`head -n 1 "$f" | sed -ne 's/^\#\![ 	]*//p' | cut -d" " -f1`
+    interplist=("${interplist[@]}" "$interp")
     case $interp in
-    */perl)	perllist="$perllist $f" ;;
+    */perl)	perllist=("${perllist[@]}" "$f") ;;
     esac
 done
-[ -n "$interplist" ] && { echo "$interplist" | tr '[:blank:]' \\n | sort -u ; }
+[ -n "$interplist" ] && { printf "%s\n" "${interplist[@]}" | sort -u ; }
 
 #
 # --- Add perl module files to perllist.
-for f in $filelist; do
-    [ -r $f -a "${f%.pm}" != "${f}" ] && perllist="$perllist $f"
+for f in "${filelist[@]}"; do
+    [ -r "$f" -a "${f%.pm}" != "${f}" ] && perllist=("${perllist[@]}" "$f")
 done
 
 #
 # --- Weak symbol versions (from glibc).
 [ -n "$mark64" ] && mark64="(64bit)"
-for f in $liblist $exelist ; do
-    [ -r $f ] || continue
-    lib64=`if file -L $f 2>/dev/null | \
+for f in "${liblist[@]}" "${exelist[@]}" ; do
+    [ -r "$f" ] || continue
+    lib64=`if file -L "$f" 2>/dev/null | \
 	grep "ELF 64-bit" >/dev/null; then echo "$mark64"; fi`
-    objdump -p $f | awk 'BEGIN { START=0; LIBNAME=""; needed='$needed'; }
+    objdump -p "$f" | awk 'BEGIN { START=0; LIBNAME=""; needed='$needed'; }
 	/^$/ { START=0; }
 	/^Dynamic Section:$/ { START=1; }
 	(START==1) && /NEEDED/ {
@@ -111,7 +114,7 @@ for f in $liblist $exelist ; do
 	    sub(/:/, "", $3);
 	    LIBNAME=$3;
 	}
-	(START==2) && (LIBNAME!="") && ($4!="") && (($4~/^GLIBC_*/) || ($4~/^GCC_*/)) {
+	(START==2) && (LIBNAME!="") && ($4!="") {
 	    print LIBNAME "(" $4 ")'$lib64'";
 	}
     '
@@ -119,17 +122,29 @@ done | sort -u
 
 #
 # --- Perl modules.
-[ -x /usr/lib/rpm/perl.req -a -n "$perllist" ] && \
-    echo $perllist | tr '[:blank:]' \\n | /usr/lib/rpm/perl.req | sort -u
+#[ -x /usr/lib/rpm/perl.req -a -n "$perllist" ] && \
+#    printf "%s\n" "${perllist[@]}" | /usr/lib/rpm/perl.req | sort -u
 
 #
 # --- Python modules.
 [ -x /usr/lib/rpm/python.req -a -n "$pythonlist" ] && \
-    echo $pythonlist | tr '[:blank:]' \\n | /usr/lib/rpm/python.req | sort -u
+    printf "%s\n" "${pythonlist[@]}" | /usr/lib/rpm/python.req | sort -u
 
 #
 # --- Tcl modules.
 [ -x /usr/lib/rpm/tcl.req -a -n "$tcllist" ] && \
-    echo $tcllist | tr '[:blank:]' \\n | /usr/lib/rpm/tcl.req | sort -u
+    printf "%s\n" "${tcllist[@]}" | /usr/lib/rpm/tcl.req | sort -u
+
+#
+# --- Mono exes/dlls
+: ${MONO_PREFIX=/usr}
+if [ -x $MONO_PREFIX/bin/mono -a -n "$monolist" ] ; then
+    printf "%s\n" "${monolist[@]}" | MONO_PATH=$MONO_PREFIX/lib${MONO_PATH:+:$MONO_PATH} prefix=$MONO_PREFIX $MONO_PREFIX/bin/mono-find-requires || echo "WARNING: MONO RPM REQUIRES WERE NOT GENERATED FOR THIS BUILD!!" 1>&2
+fi
+
+#
+# --- Kernel module imported symbols
+[ -x ${0%/*}/find-requires.ksyms ] &&
+    printf "%s\n" "${filelist[@]}" | ${0%/*}/find-requires.ksyms "$@"
 
 exit 0
