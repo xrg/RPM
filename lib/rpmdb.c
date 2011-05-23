@@ -674,6 +674,12 @@ int rpmdbSync(rpmdb db)
     return dbiForeach(db->_dbi, dbiSync, 0);
 }
 
+int rpmdbSuspendResumeDBLock(rpmdb db, int mode)
+{
+    if (db == NULL) return 0;
+    return dbiForeach(db->_dbi, mode ? dbiResumeDBLock : dbiSuspendDBLock, 0);
+}
+
 static rpmdb newRpmdb(const char * root, const char * home,
 		      int mode, int perms, int flags)
 {

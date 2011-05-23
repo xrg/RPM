@@ -640,3 +640,59 @@ int dbiOpen(rpmdb rdb, rpmDbiTagVal rpmtag, dbiIndex * dbip, int flags)
 
     return rc;
 }
+
+int dbiSuspendDBLock(dbiIndex dbi, unsigned int flags)
+{
+    struct flock l;
+    int rc = 0;
+    int fdno = -1;
+
+    if (!dbi->dbi_lockdbfd)
+	return 0;
+    if (!(dbi->dbi_rpmdb->db_mode & (O_RDWR|O_WRONLY)))
+	return 0;
+    if (_lockdbfd == 0)
+	return 0;
+    if (!(dbi->dbi_db->fd(dbi->dbi_db, &fdno) == 0 && fdno >= 0))
+	return 1;
+    memset(&l, 0, sizeof(l));
+    l.l_whence = 0;
+    l.l_start = 0;
+    l.l_len = 0;
+    l.l_type = F_RDLCK;
+    rc = fcntl(fdno, F_SETLK, (void *)&l);
+    if (rc)
+	rpmlog(RPMLOG_WARNING, _("could not suspend database lock\n"));
+    return rc;
+}
+
+int dbiResumeDBLock(dbiIndex dbi, unsigned int flags)
+{
+    struct flock l;
+    int rc = 0;
+    int tries;
+    int fdno = -1;
+
+    if (!dbi->dbi_lockdbfd)
+	return 0;
+    if (!(dbi->dbi_rpmdb->db_mode & (O_RDWR|O_WRONLY)))
+	return 0;
+    if (_lockdbfd == 0)
+	return 0;
+    if (!(dbi->dbi_db->fd(dbi->dbi_db, &fdno) == 0 && fdno >= 0))
+	return 1;
+    for (tries = 0; tries < 2; tries++) {
+	memset(&l, 0, sizeof(l));
+	l.l_whence = 0;
+	l.l_start = 0;
+	l.l_len = 0;
+	l.l_type = F_WRLCK;
+	rc = fcntl(fdno, tries ? F_SETLKW : F_SETLK, (void *)&l);
+	if (!rc)
+	    break;
+	if (tries == 0)
+	    rpmlog(RPMLOG_WARNING, _("waiting to reestablish exclusive database lock\n"));
+    }
+    return rc;
+}
+

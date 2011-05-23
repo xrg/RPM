@@ -263,6 +263,24 @@ int dbiFlags(dbiIndex dbi);
 RPM_GNUC_INTERNAL
 const char * dbiName(dbiIndex dbi);
 
+/** \ingroup dbi
+ * Suspend the exclusive lock on the dbi
+ * @param dbi		index database handle
+ * @param flags		(unused)
+ * @return		0 on success
+ */
+RPM_GNUC_INTERNAL
+int dbiSuspendDBLock(dbiIndex dbi, unsigned int flags);
+
+/** \ingroup dbi
+ * Reacquire an exclusive lock on the dbi
+ * @param dbi		index database handle
+ * @param flags		(unused)
+ * @return		0 on success
+ */
+RPM_GNUC_INTERNAL
+int dbiResumeDBLock(dbiIndex dbi, unsigned int flags);
+
 #ifdef __cplusplus
 }
 #endif

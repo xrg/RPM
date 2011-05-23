@@ -412,10 +412,12 @@ static rpmRC runScript(rpmpsm psm, ARGV_const_t prefixes,
 		     script->tag != RPMTAG_VERIFYSCRIPT);
     int selinux = !(rpmtsFlags(psm->ts) & RPMTRANS_FLAG_NOCONTEXTS);
 
+    rpmtsSuspendResumeDBLock(psm->ts, 0);
     rpmswEnter(rpmtsOp(psm->ts, RPMTS_OP_SCRIPTLETS), 0);
     rc = rpmScriptRun(script, arg1, arg2, rpmtsScriptFd(psm->ts),
 		      prefixes, warn_only, selinux);
     rpmswExit(rpmtsOp(psm->ts, RPMTS_OP_SCRIPTLETS), 0);
+    rpmtsSuspendResumeDBLock(psm->ts, 1);
 
     /* 
      * Notify callback for all errors. "total" abused for warning/error,
