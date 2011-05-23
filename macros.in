@@ -1247,6 +1247,7 @@ EOF
 # %files -f %{name}.lang
 #
 %find_lang	%{_rpmconfigdir}/find-lang.sh %{buildroot}
+%no_lang_C	--without-C
 
 # Commands + opts to use for retrieving remote files
 # Proxy opts can be set through --httpproxy/--httpport popt aliases,
