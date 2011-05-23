@@ -22,7 +22,9 @@ LC_ALL=C sort > $FILES_RPM
 
 diff -d "$FILES_DISK" "$FILES_RPM" | grep "^< " | cut -c3- | 
 while read f; do
-	echo $f | sed -e "s#^$RPM_BUILD_ROOT#   #g"
+	if test "$RPM_BUILD_ROOT/usr/share/info/dir" != "$f" ; then
+		echo $f | sed -e "s#^$RPM_BUILD_ROOT#   #g"
+	fi
 done
 
 rm -f $FILES_DISK
