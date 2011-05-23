@@ -48,6 +48,21 @@ combine_modaliases() {
     print_modaliases "$class" "$variants" "$pos"
 }
 
+# Encode all characters other than [*:a-zA-Z0-9] in stdin as %XX.
+# (This includes the % character itself, which becomes %25.)
+hexenc() {
+    local line hex
+
+    while read line; do
+            set -- "" "$line"
+            while [[ "$2" =~ ([*:a-zA-Z0-9]*)([^*:a-zA-Z0-9])(.*) ]]; do
+                hex=$(echo -n "${BASH_REMATCH[2]}" | hexdump -e '"%X"')
+                set -- "$1${BASH_REMATCH[1]}%$hex" "${BASH_REMATCH[3]}"
+            done
+            echo "$1$2"
+    done
+}
+
 aliases_of_filelist() {
     modlist=$(mktemp)
     have_module=1
@@ -60,6 +75,7 @@ aliases_of_filelist() {
 	fi
 	have_module=0
 	/sbin/modinfo -F alias "$module" \
+	| hexenc \
 	| sed -nre "s,(.+:.+),modalias(kernel-${krel##*-}:\\1),p" | tee -a $modlist
     done
     if ! test -s "$modlist" && test $have_module = 0; then
