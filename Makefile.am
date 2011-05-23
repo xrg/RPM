@@ -170,6 +170,10 @@ rpmgraph_LDADD =	lib/librpm.la rpmio/librpmio.la @WITH_POPT_LIB@
 
 dist_bin_SCRIPTS =	scripts/gendiff
 
+bin_PROGRAMS +=		rpmqpack
+rpmqpack_SOURCES =      rpmqpack.c
+rpmqpack_LDADD =        lib/librpm.la
+
 rpmconfig_DATA = rpmrc
 rpmrc: $(top_srcdir)/rpmrc.in
 	@$(SED) \

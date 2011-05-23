@@ -1,0 +1,25 @@
+.TH RPMQPACK 8 "Mar 2002"
+.SH NAME
+rpmqpack \- check for installed rpm packages
+
+.SH SYNOPSIS
+.B rpmqpack
+.RI [ pack1 "] [" pack2 ]...
+
+.SH DESCRIPTION
+rpmqpack checks if packages given as arguments are installed in
+the system. It prints each installed package to stdout.
+If no arguments are given all installed packages are printed.
+
+.SH EXIT STATUS
+rpmqpack returns 0 if all given packages are installed, otherwise
+1.
+
+.SH SEE ALSO
+.BR rpm (1)
+
+.SH COPYRIGHT
+2002 SuSE Linux AG Nuernberg, Germany.
+
+.SH AUTHOR
+Michael Schroeder <mls@suse.de>
