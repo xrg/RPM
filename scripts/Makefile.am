@@ -16,6 +16,7 @@ EXTRA_DIST = \
 	rpmdb_loadcvt rpm.daily rpm.log rpm2cpio.sh \
 	tcl.req tgpg vpkg-provides.sh \
 	find-requires.php find-provides.php \
+	find-requires.ksyms find-provides.ksyms \
 	find-php-provides find-php-requires \
 	mono-find-requires mono-find-provides \
 	ocaml-find-requires.sh ocaml-find-provides.sh \
@@ -32,6 +33,7 @@ rpmconfig_SCRIPTS = \
 	check-buildroot check-rpaths check-rpaths-worker \
 	find-lang.sh \
 	perl.prov perl.req perldeps.pl pythondeps.sh osgideps.pl \
+	find-requires.ksyms find-provides.ksyms \
 	mono-find-requires mono-find-provides \
 	pkgconfigdeps.sh libtooldeps.sh \
 	ocaml-find-requires.sh ocaml-find-provides.sh \

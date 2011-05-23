@@ -1,0 +1,41 @@
+#! /bin/sh
+
+IFS=$'\n'
+
+case "$1" in
+kernel-module-*)    ;; # Fedora kernel module package names start with
+		       # kernel-module.
+kernel*)	    kernel_flavor=${1#kernel-} ;;
+esac
+
+trap 'rm -f "$tmp"' EXIT
+tmp=$(mktemp)
+while read f; do
+    test -e "$f" || continue
+    case "$f" in
+    *.debug)
+        continue
+        ;;
+    */lib/modules/*/*.ko | */lib/modules/*/*.ko.gz | */boot/vmlinu[xz]*)
+        ;;
+    *)
+        continue
+    esac
+    unzip=false
+    case "$f" in
+    *.gz | */boot/vmlinuz*)
+        unzip=true
+    esac
+    if $unzip && gzip -cd "$f" >"$tmp"; then
+        f=$tmp
+    fi
+    flavor=$(/sbin/modinfo -F vermagic "$f")
+    flavor=${flavor%% *}
+    flavor=${flavor##*-}
+    if test -z "$flavor"; then
+        flavor=$kernel_flavor
+    fi
+    nm "$f" \
+    | sed -r -ne "s/^0*([0-9a-f]+) A __crc_(.+)/ksym($flavor:\\2) = \\1/p"
+done \
+| sort -u
