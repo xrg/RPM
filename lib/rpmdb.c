@@ -257,6 +257,9 @@ static int dbt2set(dbiIndex dbi, DBT * data, dbiIndexSet * setp)
 		_DBSWAP(hdrNum);
 		_DBSWAP(tagNum);
 	    }
+	    /* remove tagged directory info */
+	    if (tagNum.ui & 0x80000000)
+		tagNum.ui &= 0x0000ffff;
 	    set->recs[i].hdrNum = hdrNum.ui;
 	    set->recs[i].tagNum = tagNum.ui;
 	}
