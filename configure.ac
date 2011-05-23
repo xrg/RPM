@@ -818,6 +818,7 @@ arm*)		RPMCANONCOLOR=0; RPMCANONARCH=arm ;;
 mipsel*)	RPMCANONCOLOR=0; RPMCANONARCH=mipsel ;;
 mips*)		RPMCANONCOLOR=0; RPMCANONARCH=mips ;;
 m68k*)		RPMCANONCOLOR=0; RPMCANONARCH=m68k ;;
+parisc*|hppa*)	RPMCANONCOLOR=0; RPMCANONARCH=hppa ;;
 sh3*)		RPMCANONCOLOR=0; RPMCANONARCH=sh3 ;;
 sh4*)		RPMCANONCOLOR=0; RPMCANONARCH=sh4 ;;
 *)		RPMCANONCOLOR=0; RPMCANONARCH=unknown ;;
@@ -828,6 +829,7 @@ esac
 RPMCANONVENDOR="$build_vendor"
 case "${build_vendor}" in
 unknown|pc|ibm|redhat|pld|mandrake|conectiva|lvr|yellowdog|caos|suse)
+	RPMCANONVENDOR=suse
 	test -f /etc/redhat-release &&		RPMCANONVENDOR=redhat
 	test -f /etc/SuSE-release &&		RPMCANONVENDOR=suse
 	test -f /etc/pld-release &&		RPMCANONVENDOR=pld
@@ -840,6 +842,9 @@ unknown|pc|ibm|redhat|pld|mandrake|conectiva|lvr|yellowdog|caos|suse)
 esac
 RPMCANONOS="$host_os_noversion"
 RPMCANONGNU="$host_os_gnu"
+if test "$RPMCANONVENDOR" = suse ; then
+    RPMCANONCOLOR=0
+fi
 AC_SUBST(RPMCANONCOLOR)
 AC_SUBST(RPMCANONARCH)
 AC_SUBST(RPMCANONVENDOR)
