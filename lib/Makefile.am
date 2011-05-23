@@ -126,7 +126,6 @@ rpmdb_printlog_LDADD = \
 	$(top_builddir)/db3/fileops_autop.o \
 	$(top_builddir)/db3/hash_autop.o \
 	$(top_builddir)/db3/qam_autop.o \
-	$(top_builddir)/db3/rep_autop.o \
 	$(top_builddir)/db3/txn_autop.o \
 	$(top_builddir)/db3/util_sig.o \
 	librpm.la
