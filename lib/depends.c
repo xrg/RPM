@@ -95,6 +95,24 @@ static rpmdbMatchIterator rpmtsPrunedIterator(rpmts ts, rpmDbiTagVal tag, const 
     return mi;
 }
 
+static int rpmNameVersionCompare(Header first, Header second)
+{
+    const char * one, * two;
+    int rc;
+
+    one = headerGetString(first, RPMTAG_NAME);
+    two = headerGetString(second, RPMTAG_NAME);
+    rc = strcmp(one, two);
+    if (rc)
+	return rc;
+    one = headerGetString(first, RPMTAG_ARCH);
+    two = headerGetString(second, RPMTAG_ARCH);
+    rc = strcmp(one, two);
+    if (rc)
+	return rc;
+    return rpmVersionCompare(first, second);
+}
+
 #define skipColor(_tscolor, _color, _ocolor) \
 	((_tscolor) && (_color) && (_ocolor) && !((_color) & (_ocolor)))
 
@@ -111,7 +129,7 @@ static void addUpgradeErasures(rpmts ts, tsMembers tsmem, rpm_color_t tscolor,
 	    continue;
 
 	/* Skip packages that contain identical NEVR. */
-	if (rpmVersionCompare(h, oh) == 0)
+	if (rpmNameVersionCompare(h, oh) == 0)
 	    continue;
 
 	removePackage(ts, oh, p);
@@ -150,7 +168,7 @@ static void addObsoleteErasures(rpmts ts, tsMembers tsmem, rpm_color_t tscolor,
 	     * If no obsoletes version info is available, match all names.
 	     */
 	    if (rpmdsEVR(obsoletes) == NULL
-		     || rpmdsAnyMatchesDep(oh, obsoletes, _rpmds_nopromote)) {
+		     || rpmdsNVRMatchesDep(oh, obsoletes, _rpmds_nopromote)) {
 		char * ohNEVRA = headerGetAsString(oh, RPMTAG_NEVRA);
 		rpmlog(RPMLOG_DEBUG, "  Obsoletes: %s\t\terases %s\n",
 			rpmdsDNEVR(obsoletes)+2, ohNEVRA);
