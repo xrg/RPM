@@ -114,7 +114,11 @@ static rpmDiskSpaceInfo rpmtsCreateDSI(const rpmts ts, dev_t dev,
     dsi->bneeded = 0;
     dsi->ineeded = 0;
 #ifdef STATFS_HAS_F_BAVAIL
+# ifdef ST_RDONLY
     dsi->bavail = (sfb.f_flag & ST_RDONLY) ? 0 : sfb.f_bavail;
+# else
+    dsi->bavail = sfb.f_bavail;
+# endif
 #else
 /* FIXME: the statfs struct doesn't have a member to tell how many blocks are
  * available for non-superusers.  f_blocks - f_bfree is probably too big, but
