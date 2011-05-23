@@ -2149,10 +2149,10 @@ rpmRC processBinaryFiles(rpmSpec spec, rpmBuildPkgFlags pkgFlags,
      */
     
     
+exit:
     if (checkFiles(spec->buildRoot, check_fileList) > 0) {
 	rc = RPMRC_FAIL;
     }
-exit:
     check_fileList = freeStringBuf(check_fileList);
     
     return rc;
