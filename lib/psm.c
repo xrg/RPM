@@ -975,6 +975,15 @@ static rpmRC rpmpsmStage(rpmpsm psm, pkgStage stage)
 	rc = (rpmdbAdd(rpmtsGetRdb(ts), h) == 0) ? RPMRC_OK : RPMRC_FAIL;
 	(void) rpmswExit(rpmtsOp(ts, RPMTS_OP_DBADD), 0);
 
+
+#if HAVE_SYSLOG_H
+       {
+               if (rpmExpandNumeric("%{_use_syslog}")) {
+                       syslog(LOG_NOTICE, "[RPM] %s installed\n", rpmteNEVRA(psm->te));
+               }
+       }
+#endif
+
 	if (rc == RPMRC_OK)
 	    rpmteSetDBInstance(psm->te, headerGetInstance(h));
 	headerFree(h);
@@ -985,6 +994,15 @@ static rpmRC rpmpsmStage(rpmpsm psm, pkgStage stage)
 	rc = (rpmdbRemove(rpmtsGetRdb(ts), rpmteDBInstance(psm->te)) == 0) ?
 						    RPMRC_OK : RPMRC_FAIL;
 	(void) rpmswExit(rpmtsOp(ts, RPMTS_OP_DBREMOVE), 0);
+
+#if HAVE_SYSLOG_H
+        {
+               if (rpmExpandNumeric("%{_use_syslog}")) {
+                       syslog(LOG_NOTICE, "[RPM] %s removed\n", rpmteNEVRA(psm->te));
+               }
+       }
+#endif
+
 	if (rc == RPMRC_OK)
 	    rpmteSetDBInstance(psm->te, 0);
 	break;

@@ -9,6 +9,10 @@
 #include "config.h"
 #endif
 
+#if HAVE_SYSLOG_H
+#include <syslog.h>
+#endif
+
 #ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h>
 #endif
