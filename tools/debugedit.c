@@ -1534,11 +1534,6 @@ main (int argc, char *argv[])
 	  fprintf (stderr, "You must specify a base dir if you specify a dest dir\n");
 	  exit (1);
 	}
-      if (strlen (dest_dir) > strlen (base_dir))
-	{
-	  fprintf (stderr, "Dest dir longer than base dir is not supported\n");
-	  exit (1);
-	}
     }
 
   /* Ensure clean paths, users can muck with these */
