@@ -5,9 +5,7 @@
 #include "system.h"
 #include <stdarg.h>
 
-#if HAVE_LIBIO_H && defined(_G_IO_IO_FILE_VERSION)
-#define	_USE_LIBIO	1
-#endif
+#define	_USE_LIBIO	0
 
 #include <rpm/rpmlog.h>
 #include <rpm/rpmmacro.h>
@@ -765,7 +763,7 @@ static const FDIO_t ufdio = &ufdio_s ;
 
 ssize_t timedRead(FD_t fd, void * bufptr, size_t length)
 {
-    return ufdio->read(fd, bufptr, length);
+    return Fread(bufptr, 1, length, fd);
 }
 
 /* =============================================================== */
