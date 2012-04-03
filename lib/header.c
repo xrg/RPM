@@ -860,13 +860,12 @@ Header headerLoad(void * uh)
 	    indexEntry newEntry = entry + ril;
 	    int ne = (h->indexUsed - ril);
 	    int rid = entry->info.offset+1;
-	    int rc;
 
 	    /* Load dribble entries from region. */
-	    rc = regionSwab(newEntry, ne, 0, pe+ril, dataStart, dataEnd, rid);
-	    if (rc < 0)
+	    rdlen = regionSwab(newEntry, ne, rdlen, pe+ril,
+				dataStart, dataEnd, rid);
+	    if (rdlen < 0)
 		goto errxit;
-	    rdlen += rc;
 
 	  { indexEntry firstEntry = newEntry;
 	    int save = h->indexUsed;
@@ -888,6 +887,11 @@ Header headerLoad(void * uh)
 	    h->indexUsed += ne;
 	  }
 	}
+
+	rdlen += REGION_TAG_COUNT;
+
+	if (rdlen != dl)
+	    goto errxit;
     }
 
     h->flags &= ~HEADERFLAG_SORTED;
