@@ -139,7 +139,9 @@ static char *doUntar(rpmSpec spec, uint32_t c, int quietly, StringBuf after_setu
 {
     char *fn;
     char *buf = NULL;
-    char *tar, *taropts;
+    char *tar, taropts[8];
+    char *t;
+    int rubygem = 0;
     struct Source *sp;
     rpmCompressedMagic compressed = COMPRESSED_NOT;
 
@@ -164,8 +166,16 @@ static char *doUntar(rpmSpec spec, uint32_t c, int quietly, StringBuf after_setu
     
     fn = rpmGetPath("%{_sourcedir}/", sp->source, NULL);
 
-    /* FIX: shrug */
-    taropts = ((rpmIsVerbose() && !quietly) ? "-xvvf" : "-xf");
+    t = rindex(sp->source, '.');
+    if(t && !strcasecmp(t, ".gem"))
+	rubygem = 1;
+
+    t = stpcpy(taropts, "-x");
+    if(rpmIsVerbose() && !quietly)
+	t = stpcpy(t, "vv");
+    if(rubygem)
+	t = stpcpy(t, "m");
+    t = stpcpy(t, "f");
 
 #ifdef AUTOFETCH_NOT	/* XXX don't expect this code to be enabled */
     /* XXX
@@ -221,10 +231,20 @@ static char *doUntar(rpmSpec spec, uint32_t c, int quietly, StringBuf after_setu
 	zipper = rpmGetPath(t, NULL);
 	if (needtar) {
 	    rasprintf(&buf, "%s '%s' | %s %s - \n"
-		"STATUS=$?\n"
-		"if [ $STATUS -ne 0 ]; then\n"
-		"  exit $STATUS\n"
-		"fi", zipper, fn, tar, taropts);
+		    "STATUS=$?\n"
+		    "if [ $STATUS -ne 0 ]; then\n"
+		    "  exit $STATUS\n"
+		    "fi", zipper, fn, tar, taropts);
+	    if(rubygem) {
+		t = stpcpy(t,
+			"\n"
+			"if [ -f data.tar.gz ]; then\n"
+			"  tar ");
+		t = stpcpy(t, taropts);
+		t = stpcpy(t,
+			" data.tar.gz\n"
+			"fi");
+	    }
 	} else {
 	    rasprintf(&buf, "%s '%s'\n"
 		"STATUS=$?\n"
@@ -341,6 +361,20 @@ static int doSetupMacro(rpmSpec spec, const char *line)
 	rasprintf(&buf, "rm -rf '%s'", spec->buildSubdir);
 	appendLineStringBuf(spec->prep, buf);
 	free(buf);
+    }
+
+    /* check if source is a ruby gem */
+    {   struct Source *sp;
+	for (sp = spec->sources; sp != NULL; sp = sp->next) {
+	    if ((sp->flags & RPMBUILD_ISSOURCE) && (sp->num == 0)) {
+		break;
+	    }
+	}
+	if (sp != NULL) {
+	    char *t = rindex(sp->source, '.');
+	    if(t && !strcasecmp(t, ".gem"))
+		createDir = 1;
+	}
     }
 
     /* if necessary, create and cd into the proper dir */
