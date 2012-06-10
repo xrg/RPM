@@ -12,6 +12,7 @@ RPM="./rpm --rcfile=$RPMRC --macros=$MACROS"
 
 canonarch_sed='s_i.86_i386_;s_pentium[34]_i386_;s_athlon_i386_;s_sparc[^-]*_sparc_;s_alpha[^-]*_alpha_;s_arm[^-]*_arm_;s_\(powerpc\|ppc\)[^-]*_ppc_;s,\(ia32e\|amd64\),x86_64,;s_sh4a_sh4_'
 arch="`$RPM --eval '%{_arch}'|sed -e "$canonarch_sed"`"
+cpu="`$RPM --eval '%{_target_cpu}'`"
 VENDOR="`$RPM --eval '%{_vendor}'`"
 OS="`$RPM --eval '%{_os}'`"
 RPMRC_GNU="`$RPM --eval '%{_gnu}'`"
@@ -167,5 +168,5 @@ done
 { cd ${DESTDIR}/${platformdir}
   [ -L noarch-${OS} ] && rm -f noarch-${OS} 2>/dev/null
   mkdir -p noarch-${OS}
-  sed -e "/^%_arch/s,${arch},noarch," ${arch}-${OS}/macros | grep -v '^%optflags' | grep -v "^%__isa" > noarch-${OS}/macros
+  sed -e "/^%_arch/s,${arch},noarch," ${cpu}-${OS}/macros | grep -v '^%optflags' | grep -v "^%__isa" > noarch-${OS}/macros
 }
