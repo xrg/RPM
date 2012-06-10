@@ -1,5 +1,4 @@
 %define git_repo rpm
-%define git_head mdv-xrg
 
 %define lib64arches	x86_64 ppc64 sparc64
 
