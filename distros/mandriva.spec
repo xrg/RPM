@@ -18,6 +18,10 @@
 %define _localstatedir /var
 %define _infodir %_datadir/info
 
+%if %{?apply_patches:0}%{?!apply_patches:1}
+%define apply_patches %(for p in `grep '^Patch.*:' "%{_specdir}/rpm.spec" | cut -d':' -f2-`; do echo "patch -p1 -F0 -i %{_sourcedir}/$p"; done )
+%endif
+
 # Define directory which holds rpm config files, and some binaries actually
 # NOTE: it remains */lib even on lib64 platforms as only one version
 #       of rpm is supported anyway, per architecture
@@ -28,43 +32,43 @@
 %endif
 
 %if %{?distsuffix:0}%{?!distsuffix:1}
-%define distsuffix mdv
+%define distsuffix .mga
 %endif
 
 %if %{?mkrel:0}%{?!mkrel:1}
-%define mkrel(c:) %{-c: 0.%{-c*}.}%{1}%{?distsuffix:%distsuffix}%{?!distsuffix:mdv}%{?mandriva_release:%mandriva_release}%{?subrel:.%subrel}
+%define mkrel(c:) %{-c: 0.%{-c*}.}%{1}%{?distsuffix:%distsuffix}%{?!distsuffix:.mga}%{?mageia_release:%mageia_release}%{?subrel:.%subrel}
+%endif
+
+%if %{?mips:0}%{?!mips:1}
+%define mips		mips mipsel mips32 mips32el mips64 mips64el
 %endif
 
 %if %{?pyver:0}%{?!pyver:1}
 %define pyver %(python -V 2>&1 | cut -f2 -d" " | cut -f1,2 -d".")
 %endif
 
-%if %_vendor == Mandriva
-%define __find_requires %{rpmdir}/mandriva/find-requires %{?buildroot:%{buildroot}} %{?_target_cpu:%{_target_cpu}}
-%define __find_provides %{rpmdir}/mandriva/find-provides
-%endif
+%define __find_requires %{rpmdir}/%{_real_vendor}/find-requires %{?buildroot:%{buildroot}} %{?_target_cpu:%{_target_cpu}}
+%define __find_provides %{rpmdir}/%{_real_vendor}/find-provides
 
-%define rpmversion	4.6.0
+%define rpmversion	4.8.1
 %define srcver		%rpmversion
-%define libver		4.6
-%define release			    %manbo_mkrel 1
-%define librpmname   %mklibname rpm  %{libver}
+%define libver		4.8
+%define libmajor	1
+%define release		%mkrel 10
+%define librpmname   %mklibname rpm  %{libmajor}
 %define librpmnamedevel   %mklibname -d rpm
 
 %define buildpython 1
 
-%if %_vendor == Mandriva
-%if %{mdkversion} >= 200710
-# MDV 2007.1 builds with --hash-style=gnu by default
 %define rpmsetup_version 1.34
-%endif
-%endif
 
 %define builddebug 0
 %{?_with_debug:%define builddebug 1}
 
 %{?_with_python:%define buildpython 1}
 %{?_without_python:%define buildpython 0}
+
+%define subrel  4
 
 Summary:	The RPM package management system
 Name:		rpm
@@ -74,9 +78,6 @@ Release:	%{release}
 Group:		System/Configuration/Packaging
 
 Source:		http://www.rpm.org/releases/rpm-%{libver}.x/rpm-%{srcver}.tar.bz2
-
-# Add some undocumented feature to gendiff
-Patch17:	rpm-4.4.2.2-gendiff-improved.patch
 
 # if %post of foo-2 fails,
 # or if %preun of foo-1 fails,
@@ -90,25 +91,30 @@ Patch17:	rpm-4.4.2.2-gendiff-improved.patch
 Patch22:        rpm-4.6.0-rc1-non-pre-scripts-dont-fail.patch
 
 # (fredl) add loging facilities through syslog
-Patch31:	rpm-4.6.0-rc1-syslog.patch
+# Patch sent to upstream for inclusion
+# http://lists.rpm.org/pipermail/rpm-maint/2011-March/002994.htm
+Patch31:	rpm-4.8.1-syslog.patch
 
 # part of Backport from 4.2.1 provides becoming obsoletes bug (fpons)
 # (is it still needed?)
 Patch49:	rpm-4.6.0-rc1-provides-obsoleted.patch
 
-# - force /usr/lib/rpm/manbo/rpmrc instead of /usr/lib/rpm/<vendor>/rpmrc
-# - read /usr/lib/rpm/manbo/rpmpopt (not only /usr/lib/rpm/rpmpopt)
-Patch64:    rpm-4.6.0-rc2-manbo-rpmrc-rpmpopt.patch
+# - force /usr/lib/rpm/mageia/rpmrc instead of /usr/lib/rpm/<vendor>/rpmrc
+# - read /usr/lib/rpm/mageia/rpmpopt (not only /usr/lib/rpm/rpmpopt)
+# Patch mageia Specific => Not merge candidate
+Patch64:    rpm-4.6.1-mageia-rpmrc-rpmpopt.patch
 
 # In original rpm, -bb --short-circuit does not work and run all stage
 # From popular request, we allow to do this
-# http://qa.mandriva.com/show_bug.cgi?id=15896
+# http://qa.mandriva.com/show_bug.cgi?id=15896Z
+# (A different implementation has landed in rpm-4.9)
 Patch70:	rpm-4.6.0-rc1-bb-shortcircuit.patch
 
 # http://www.redhat.com/archives/rpm-list/2005-April/msg00131.html
 # http://www.redhat.com/archives/rpm-list/2005-April/msg00132.html
 # is this useful? "at least erasure ordering is just as non-existent as it was in 4.4.x" says Panu
-Patch71:    rpm-4.6.0-ordererase.patch
+#with rpm 4.8.0, breaks urpmi testsuite (ordering-scriptlets)
+#Patch71:    rpm-4.6.0-ordererase.patch#with rpm 4.8.0, breaks urpmi testsuite (ordering-scriptlets)
 
 # don't conflict for doc files
 # (to be able to install lib*-devel together with lib64*-devel even if they have conflicting manpages)
@@ -125,14 +131,14 @@ Patch111: rpm-check-file-trim-double-slash-in-buildroot.patch
 Patch114: rpm-4.6.0-rc1-read-macros_d-dot-macros.patch
 
 # remove unused skipDir functionality that conflicts with patch124 below
-Patch1124: rpm-4.6.0-rc1-revert-unused-skipDir-functionality.patch
+#Patch1124: rpm-4.6.0-rc1-revert-unused-skipDir-functionality.patch
 
 # [pixel] without this patch, "rpm -e" or "rpm -U" will need to stat(2) every dirnames of
 # files from the package (eg COPYING) in the db. This is quite costly when not in cache 
 # (eg on a test here: >300 stats, and so 3 seconds after a "echo 3 > /proc/sys/vm/drop_caches")
 # this breaks urpmi test case test_rpm_i_fail('gd') in superuser--file-conflicts.t,
 # but this is bad design anyway
-Patch124: rpm-4.6.0-rc1-speedup-by-not-checking-same-files-with-different-paths-through-symlink.patch
+#Patch124: rpm-4.6.0-rc1-speedup-by-not-checking-same-files-with-different-paths-through-symlink.patch
 
 # [from SuSE] handle "Suggests" via RPMTAG_SUGGESTSNAME
 Patch133: rpm-4.6.0-rc1-weakdeps.patch
@@ -143,10 +149,8 @@ Patch135: rpm-4.4.2.3-rc1-fix-debugedit.patch
 # convert data in the header to a specific encoding which used in the selected locale.
 Patch137: rpm-4.6.0-rc1-headerIconv.patch
 
-Patch140: rpm-russian-translation.patch
-
 # Mandriva does not need the (broken) ldconfig hack since it uses filetriggers
-Patch141: rpm-4.6.0-rc1-drop-skipping-ldconfig-hack.patch
+#Patch141: rpm-4.6.0-rc1-drop-skipping-ldconfig-hack.patch
 
 # without this patch, "#%define foo bar" is surprisingly equivalent to "%define foo bar"
 # with this patch, "#%define foo bar" is a fatal error
@@ -167,13 +171,13 @@ Patch157: introduce-_after_setup-which-is-called-after-setup.patch
 Patch158: introduce-_patch-and-allow-easy-override-when-the-p.patch
 Patch159: introduce-apply_patches-and-lua-var-patches_num.patch
 
+
+Patch160: rpm-4.8.1-kill-libio.patch
+
 #Patch1001: rpm-4.6.0-rc1-new-liblzma.patch
 
 # default behaviour in rpm-jbj >= 4.4.6
 Patch1005: rpm-allow-conflicting-ghost-files.patch
-
-# (nb: see the patch for more info about this issue)
-Patch1006: rpm-4.6.0-rc1-compat-PayloadIsLzma.patch
 
 Patch1007: rpm-4.6.0-rc3-xz-support.patch
 
@@ -181,22 +185,48 @@ Patch1007: rpm-4.6.0-rc3-xz-support.patch
 # as this breaks stuff that installs files to $DOCDIR during %%install
 Patch1008: rpm-4.6.0-rc3-no_rm_-rf_DOCDIR.patch
 
+# Exposes packagecolor tag and adds new tags from rpm5 as it otherwise will
+# break when these unknown tags might be found in the rpmdb. Notice that this
+# will only make rpm recognize these, not implement actual support for them..
+Patch1009: rpm-4.6.0-rpm5-tags.patch
+
+# Automatically handle ruby gem extraction in %setup
+Patch1018: rpm-4.8.1-setup-rubygems.patch
+
 # Turbolinux patches
-Patch2000: rpm-4.6.0-rc1-serial-tag.patch
-# re-enable "copyright" tag (Kiichiro, 2005)
-Patch2001: rpm-4.6.0-rc1-copyright-tag.patch
 # add writeHeaderListTofile function into rpm-python (needed by "buildman" build system) (Toshihiro, 2003)
-Patch2002: rpm-4.6.0-rc1-python-writeHdlist.patch
+#Patch2002: rpm-4.6.0-rc1-python-writeHdlist.patch
 # Crusoe CPUs say that their CPU family is "5" but they have enough features for i686.
 Patch2003: rpm-4.4.2.3-rc1-transmeta-crusoe-is-686.patch
 
-# The following patch is unneeded for Mandriva, but Turbolinux has it and it can't hurt much
+# The following patch isn't needed for Mandriva, but Turbolinux has it and it can't hurt much
 #
 # This patch fixes the problem when the post-scripts launched by rpm-build. 
 # The post-scripts launched by rpm-build works in LANG environment. If LANG is
 # other locale except C, then some commands launched by post-scripts will not
 # display characters which you expected.
 Patch2005: rpm-4.6.0-rc1-buildlang.patch
+
+Patch2000: rpm-4.6.0-rc1-serial-tag.patch
+# re-enable "copyright" tag (Kiichiro, 2005)
+Patch2001: rpm-4.6.0-rc1-copyright-tag.patch
+
+Patch3000: mips_macros.patch
+Patch3001: fix_stack_protector_check.patch
+Patch3002: mips_define_isa_macros.patch
+Patch3003: rpm_arm_mips_isa_macros.patch
+Patch3004: rpm_add_armv5tl.patch
+# This patch allow to fix build of rpm on other arch like ARM
+Patch3005: rpm_fix_platformdir.patch
+
+# CVE Patches
+Patch4000: rpm-4.8.1-CVE-2011-3378-1.patch
+Patch4001: rpm-4.8.1-CVE-2011-3378-2.patch
+Patch4002: rpm-4.8.1-CVE-2011-3378-3.patch
+Patch4003: rpm-4.8.1-CVE-2012-0060-1.patch
+Patch4004: rpm-4.8.1-CVE-2012-0060-2.patch
+Patch4005: rpm-4.8.1-CVE-2012-0061.patch
+Patch4006: rpm-4.8.1-CVE-2012-0815.patch
 
 License:	GPL
 BuildRequires:	autoconf >= 2.57
@@ -209,21 +239,19 @@ BuildRequires:	sed >= 4.0.3
 BuildRequires:	libbeecrypt-devel
 BuildRequires:	ed, gettext-devel
 BuildRequires:  libsqlite3-devel
-BuildRequires:  db4.6-devel
+BuildRequires:  db4.8-devel
 BuildRequires:  neon-devel
 BuildRequires:	popt-devel
 BuildRequires:	nss-devel
 BuildRequires:	magic-devel
-%if %_vendor == Mandriva
-BuildRequires:  rpm-mandriva-setup-build %{?rpmsetup_version:>= %{rpmsetup_version}}
-%endif
+BuildRequires:  rpm-%{_real_vendor}-setup-build %{?rpmsetup_version:>= %{rpmsetup_version}}
 BuildRequires:  readline-devel
 BuildRequires:	ncurses-devel
 BuildRequires:  openssl-devel >= 0.9.8
 BuildRequires:  lua-devel
 # Need for doc
 #BuildRequires:	graphviz
-BuildRequires:	tetex
+BuildRequires:	texlive
 %if %buildpython
 BuildRequires:	python-devel
 %endif
@@ -234,19 +262,16 @@ Requires:	cpio
 Requires:	gawk
 Requires:	glibc >= 2.1.92
 Requires:	mktemp
-Requires:	setup >= 2.2.0-8mdk
-Requires:	rpm-manbo-setup
-%if %_vendor == Mandriva
-Requires:	rpm-mandriva-setup >= 1.85
-%endif
+Requires:	setup >= 2.2.0-8
+Requires:	rpm-%{_real_vendor}-setup >= 1.85
 Requires:	update-alternatives
 Requires:	%librpmname = %epoch:%version-%release
 Conflicts:	patch < 2.5
-Conflicts:	menu < 2.1.5-29mdk
+Conflicts:	menu < 2.1.5-29
 Conflicts:	locales < 2.3.1.1
-Conflicts:	man-pages-fr < 0.9.7-16mdk
-Conflicts:	man-pages-pl < 0.4-9mdk
-Conflicts:	perl-URPM < 1.63-3mdv2008.0
+Conflicts:	man-pages-fr < 0.9.7-16
+Conflicts:	man-pages-pl < 0.4-9
+Conflicts:	perl-URPM < 1.63-3
 # rpm 4.6.0 dropped support for --repackage, so urpmi-recover can not work anymore:
 Conflicts:	urpmi-recover
 URL:            http://rpm.org/
@@ -300,16 +325,14 @@ Requires:	automake
 Requires:	file
 Requires:	gcc-c++
 # We need cputoolize & amd64-* alias to x86_64-* in config.sub
-Requires:	libtool-base >= 1.4.3-5mdk
-Requires:	patch
+Requires:	libtool-base >= 1.4.3-5
+Requires:	patch >= 2.5.9-7
 Requires:	make
 Requires:	tar
 Requires:	unzip
 Requires:	elfutils
 Requires:	rpm = %epoch:%{version}-%{release}
-%if %_vendor == Mandriva
-Requires:	rpm-mandriva-setup-build %{?rpmsetup_version:>= %{rpmsetup_version}}
-%endif
+Requires:	rpm-%{_real_vendor}-setup-build %{?rpmsetup_version:>= %{rpmsetup_version}}
 
 %description build
 This package contains scripts and executable programs that are used to
@@ -371,7 +394,7 @@ rm -rf $RPM_BUILD_ROOT
 make DESTDIR=%buildroot install
 
 %ifarch ppc powerpc
-ln -sf ppc-mandriva-linux $RPM_BUILD_ROOT%{rpmdir}/powerpc-mandriva-linux
+ln -sf ppc-%{_real_vendor}-linux $RPM_BUILD_ROOT%{rpmdir}/powerpc-%{_real_vendor}-linux
 %endif
 
 #mv -f $RPM_BUILD_ROOT/%{rpmdir}/rpmdiff $RPM_BUILD_ROOT/%{_bindir}
@@ -420,11 +443,7 @@ EOF
   rm -f  .%{_bindir}/rpmdiff
 )
 
-%if %_vendor == Mandriva
 %{rpmdir}/%{_host_vendor}/find-lang.pl $RPM_BUILD_ROOT %{name}
-%else
-%find_lang %{name}
-%endif
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -443,6 +462,8 @@ fi
 /usr/share/rpm-helper/add-user rpm $1 rpm /var/lib/rpm /bin/false
 
 rm -rf /usr/lib/rpm/*-mandrake-*
+rm -rf /usr/lib/rpm/*-%{_real_vendor}-*
+
 
 %post
 # nuke __db.00? when updating to this rpm
@@ -461,13 +482,6 @@ fi
 
 %postun
 /usr/share/rpm-helper/del-user rpm $1 rpm
-
-%if %mdkversion < 200900
-%post -n %librpmname -p /sbin/ldconfig
-%endif
-%if %mdkversion < 200900
-%postun -n %librpmname -p /sbin/ldconfig
-%endif
 
 %triggerpostun -- rpm < 1:4.4.2.3-11
 if [ -f /etc/rpm/macros.cdb.rpmsave ]; then
@@ -507,6 +521,7 @@ fi
 %rpmattr	%{rpmdir}/rpm2cpio.sh
 %rpmattr	%{rpmdir}/tgpg
 
+%dir %attr(   -, rpm, rpm) %{rpmdir}/platform/
 %ifarch %{ix86} x86_64
 %attr(   -, rpm, rpm) %{rpmdir}/platform/i*86-*
 %attr(   -, rpm, rpm) %{rpmdir}/platform/athlon-*
@@ -540,6 +555,12 @@ fi
 %attr(   -, rpm, rpm) %{rpmdir}/platform/amd64-*
 %attr(   -, rpm, rpm) %{rpmdir}/platform/x86_64-*
 %attr(   -, rpm, rpm) %{rpmdir}/platform/ia32e-*
+%endif
+%ifarch %arm
+%attr(   -, rpm, rpm) %{rpmdir}/platform/armv*
+%endif
+%ifarch %mips
+%attr(   -, rpm, rpm) %{rpmdir}/platform/mips*
 %endif
 %attr(   -, rpm, rpm) %{rpmdir}/platform/noarch*
 
@@ -581,10 +602,12 @@ fi
 %rpmattr	%{_prefix}/lib/rpm/brp-*
 %rpmattr	%{_prefix}/lib/rpm/check-files
 %rpmattr	%{_prefix}/lib/rpm/debugedit
+%rpmattr	%{_prefix}/lib/rpm/desktop-file.prov 
 %rpmattr	%{_prefix}/lib/rpm/find-debuginfo.sh
 %rpmattr	%{_prefix}/lib/rpm/find-lang.sh
 %rpmattr	%{_prefix}/lib/rpm/find-provides
 %rpmattr	%{_prefix}/lib/rpm/find-requires
+%rpmattr	%{_prefix}/lib/rpm/fontconfig.prov
 %rpmattr	%{_prefix}/lib/rpm/perldeps.pl
 %rpmattr	%{_prefix}/lib/rpm/perl.prov
 %rpmattr	%{_prefix}/lib/rpm/perl.req
@@ -600,6 +623,8 @@ fi
 %rpmattr	%{_prefix}/lib/rpm/macros.python
 %rpmattr	%{_prefix}/lib/rpm/mono-find-provides
 %rpmattr	%{_prefix}/lib/rpm/mono-find-requires
+%rpmattr	%{_prefix}/lib/rpm/ocaml-find-provides.sh
+%rpmattr	%{_prefix}/lib/rpm/ocaml-find-requires.sh
 %rpmattr	%{_prefix}/lib/rpm/osgideps.pl
 %rpmattr	%{_prefix}/lib/rpm/pkgconfigdeps.sh
 %rpmattr	%{_prefix}/lib/rpm/rpmdiff
@@ -619,9 +644,9 @@ fi
 
 %files -n %librpmname
 %defattr(-,root,root)
-%{_libdir}/librpm-%{libver}.so
-%{_libdir}/librpmio-%{libver}.so
-%{_libdir}/librpmbuild-%{libver}.so
+%{_libdir}/librpm.so.%{libmajor}*
+%{_libdir}/librpmio.so.%{libmajor}*
+%{_libdir}/librpmbuild.so.%{libmajor}*
 
 %files -n %librpmnamedevel
 %defattr(-,root,root)
