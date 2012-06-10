@@ -51,7 +51,7 @@
 
 %define rpmversion	%{git_get_ver}
 %define srcver		%rpmversion
-%define libver		4.8
+%define libmajor	1
 %define release		%mkrel %{git_get_rel}
 %define librpmname   %mklibname rpm  %{libmajor}
 %define librpmnamedevel   %mklibname -d rpm
@@ -66,7 +66,7 @@
 %{?_with_python:%define buildpython 1}
 %{?_without_python:%define buildpython 0}
 
-%define subrel  4
+# define subrel  4
 
 Summary:	The RPM package management system
 Name:		rpm
