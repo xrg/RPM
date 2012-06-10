@@ -422,28 +422,17 @@ void closeSpec(rpmSpec spec)
 	ofi = _free(ofi);
     }
 }
-static const char *_headerName(Header h)
-{
-  const char *s;
-  (void) headerNVR(h, &s, NULL, NULL);
-  return s;
-}
-
-static const char *_headerRelease(Header h)
-{
-  const char *s;
-  (void) headerNVR(h, NULL, NULL, &s);
-  return s;
-}
 
 static int checkNonPackagedRPM(Header h, int is_main_subpackage)
 {
     int res = 0;
     struct rpmtd_s td;
+    const char *relStr;
 
     /* those checks are Mandriva only (May 2008),
-       and must not break non Mandriva packages */    
-    if (strstr(_headerRelease(h), "mdv") == 0) return 0;
+       and must not break non Mandriva packages */
+    relStr = headerGetString(h,RPMTAG_RELEASE);
+    if ((strstr(relStr, "mdv") == 0) || (strstr(relStr, "mga"))) return 0;
 
     /* Check that no %pre, %post ... do not exist in this header, since they will be dropped */
     HeaderIterator hi = headerInitIterator(h);
@@ -463,7 +452,7 @@ static int checkNonPackagedRPM(Header h, int is_main_subpackage)
       case RPMTAG_TRIGGERPOSTUN:
 
 	rpmlog(RPMLOG_ERR, _("Useless %%%s on non existant binary package \"%s\"\n"),
-		 rpmTagGetName(tag), _headerName(h));
+		 rpmTagGetName(tag), headerGetString(h, RPMTAG_NAME));
 	res = 1;
       }
       rpmtdFreeData(&td);
@@ -475,9 +464,9 @@ static int checkNonPackagedRPM(Header h, int is_main_subpackage)
 	 /* (otherwise what's the use creating the subpackage in the first place) */
 
 	 /* we must skip the *-__restore__ fake subpackage used after *-debug subpackage */
-	 if (strstr(_headerName(h), "__restore__") == NULL) {
+	 if (strstr(headerGetString(h, RPMTAG_NAME), "__restore__") == NULL) {
 	      rpmlog(RPMLOG_ERR, _("Missing %%files for subpackage %s\n"),
-		       _headerName(h));
+		       headerGetString(h, RPMTAG_NAME));
 	      res = 1;
 	 }
     }
