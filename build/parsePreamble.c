@@ -720,20 +720,16 @@ typedef const struct PreambleRec_s {
 } * PreambleRec;
 
 #define LEN_AND_STR(_tag) (sizeof(_tag)-1), _tag
-    {RPMTAG_EPOCH,		0, 0, 0, "serial"},
-    {RPMTAG_LICENSE,		0, 0, 0, "copyright"},
-    {RPMTAG_SUGGESTSFLAGS,	0, 0, 0, "recommends"},
-    {RPMTAG_SUGGESTSFLAGS,	0, 0, 0, "suggests"},
-    {RPMTAG_ENHANCESFLAGS,	0, 0, 0, "supplements"},
-    {RPMTAG_ENHANCESFLAGS,	0, 0, 0, "enhances"},
 
 static struct PreambleRec_s const preambleList[] = {
     {RPMTAG_NAME,		0, 0, LEN_AND_STR("name")},
     {RPMTAG_VERSION,		0, 0, LEN_AND_STR("version")},
     {RPMTAG_RELEASE,		0, 0, LEN_AND_STR("release")},
     {RPMTAG_EPOCH,		0, 0, LEN_AND_STR("epoch")},
+    {RPMTAG_EPOCH,		0, 0, LEN_AND_STR("serial")},
     {RPMTAG_SUMMARY,		1, 0, LEN_AND_STR("summary")},
     {RPMTAG_LICENSE,		0, 0, LEN_AND_STR("license")},
+    {RPMTAG_LICENSE,		0, 0, LEN_AND_STR("copyright")},
     {RPMTAG_DISTRIBUTION,	0, 0, LEN_AND_STR("distribution")},
     {RPMTAG_DISTURL,		0, 0, LEN_AND_STR("disturl")},
     {RPMTAG_VENDOR,		0, 0, LEN_AND_STR("vendor")},
@@ -768,6 +764,10 @@ static struct PreambleRec_s const preambleList[] = {
     {RPMTAG_DOCDIR,		0, 0, LEN_AND_STR("docdir")},
     {RPMTAG_DISTTAG,		0, 0, LEN_AND_STR("disttag")},
     {RPMTAG_BUGURL,		0, 0, LEN_AND_STR("bugurl")},
+    {RPMTAG_SUGGESTSFLAGS,	0, 0, LEN_AND_STR("recommends")},
+    {RPMTAG_SUGGESTSFLAGS,	0, 0, LEN_AND_STR("suggests")},
+    {RPMTAG_ENHANCESFLAGS,	0, 0, LEN_AND_STR("supplements")},
+    {RPMTAG_ENHANCESFLAGS,	0, 0, LEN_AND_STR("enhances")},
     {0, 0, 0, 0}
 };
 
