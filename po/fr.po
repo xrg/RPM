@@ -15,6 +15,7 @@ msgstr ""
 "PO-Revision-Date: 2003-07-06 01:36+0200\n"
 "Last-Translator: RPM French Translation <rpm-fr@livna.org>\n"
 "Language-Team: RPM French Translation <rpm-fr@livna.org>\n"
+"Language: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8-bit\n"
@@ -2891,8 +2892,8 @@ msgstr "le paquetage %s (plus récent que %s) est déjà installé"
 #, fuzzy, c-format
 msgid "installing package %s needs %<PRIu64>%cB on the %s filesystem"
 msgstr ""
-"installer le paquetage %s nécessite %<PRIu64>%co sur le système de fichiers %"
-"s"
+"installer le paquetage %s nécessite %<PRIu64>%co sur le système de fichiers "
+"%s"
 
 #: lib/rpmps.c:356
 #, fuzzy, c-format

@@ -6,6 +6,7 @@ msgstr ""
 "PO-Revision-Date: 2002-02-14 10:51+0000\n"
 "Last-Translator: José Nuno Coelho Sanarra Pires <jncp@rnl.ist.utl.pt>\n"
 "Language-Team: pt <morais@kde.org\n"
+"Language: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -2859,8 +2860,8 @@ msgstr ""
 #, c-format
 msgid "file %s from install of %s conflicts with file from package %s"
 msgstr ""
-"o ficheiro %s da instalação do %s está em conflito com o ficheiro do pacote %"
-"s"
+"o ficheiro %s da instalação do %s está em conflito com o ficheiro do pacote "
+"%s"
 
 #: lib/rpmps.c:341
 #, c-format
