@@ -1,5 +1,5 @@
 %define git_repo rpm
-%define git_head mdv-xrg
+# define git_head mdv-xrg
 
 %define lib64arches	x86_64 
 
@@ -50,8 +50,7 @@
 %define __find_requires %{rpmdir}/%{_real_vendor}/find-requires %{?buildroot:%{buildroot}} %{?_target_cpu:%{_target_cpu}}
 %define __find_provides %{rpmdir}/%{_real_vendor}/find-provides
 
-%define rpmversion     4.10.0
-#define rpmversion	%{git_get_ver}
+%define rpmversion	%{git_get_ver}
 %define libver		4.9
 %define libmajor	3
 %define libmajorsign    1
@@ -80,7 +79,9 @@ Epoch:		1
 Version:        %{rpmversion}
 Release:	%{release}
 Group:		System/Configuration/Packaging
-Source:		rpm-%{version}.tar.gz
+Source:		%git_bs_source rpm-%{version}.tar.gz
+Source1:	%{name}-gitrpm.version
+Source2:	%{name}-changelog.gitrpm.txt
 License:	GPLv2+
 BuildRequires:	autoconf
 BuildRequires:	zlib-devel
@@ -517,3 +518,4 @@ fi
 %{_libdir}/librpmsign.so
 %{_libdir}/pkgconfig/rpm.pc
 
+%changelog -f  %{_sourcedir}/%{name}-changelog.gitrpm.txt
