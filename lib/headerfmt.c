@@ -568,8 +568,12 @@ static int parseExpression(headerSprintfArgs hsa, sprintfToken token,
 
     *endPtr = chptr;
 
+    token->u.cond.tag.type = NULL;
+    token->u.cond.tag.format = "";
     token->type = PTOK_COND;
 
+    if ((token->u.cond.tag.type = strchr(str, ':')) != 0)
+	*token->u.cond.tag.type++ = 0;
     (void) findTag(hsa, token, str);
 
     return 0;
@@ -665,6 +669,7 @@ static char * singleSprintf(headerSprintfArgs hsa, sprintfToken token,
     int i, j, found;
     rpm_count_t count, numElements;
     sprintfToken spft;
+    sprintfTag stag;
     int condNumFormats;
     size_t need;
 
@@ -695,6 +700,18 @@ static char * singleSprintf(headerSprintfArgs hsa, sprintfToken token,
 		      headerIsEntry(hsa->h, token->u.cond.tag.tag)) {
 	    spft = token->u.cond.ifFormat;
 	    condNumFormats = token->u.cond.numIfTokens;
+	    if (token->u.cond.tag.fmt) {
+		/* check if format creates output */
+		size_t vallen = hsa->vallen;
+		formatValue(hsa, &token->u.cond.tag, element);
+		if (hsa->vallen == vallen) {
+		    spft = token->u.cond.elseFormat;
+		    condNumFormats = token->u.cond.numElseTokens;
+		} else {
+		    hsa->vallen = vallen;
+		    hsa->val[hsa->vallen] = 0;
+		}
+	    }
 	} else {
 	    spft = token->u.cond.elseFormat;
 	    condNumFormats = token->u.cond.numElseTokens;
@@ -718,10 +735,13 @@ static char * singleSprintf(headerSprintfArgs hsa, sprintfToken token,
 	for (i = 0; i < token->u.array.numTokens; i++, spft++)
 	{
 	    rpmtd td = NULL;
-	    if (spft->type != PTOK_TAG ||
-		spft->u.tag.justOne) continue;
+	    if (spft->type != PTOK_TAG && spft->type != PTOK_COND)
+		continue;
+	    stag = (spft->type == PTOK_COND ? &spft->u.cond.tag : &spft->u.tag);
+	    if (stag->justOne)
+		continue;
 
-	    if (!(td = getData(hsa, spft->u.tag.tag))) {
+	    if (!(td = getData(hsa, stag->tag))) {
 		continue;
 	    }
 
