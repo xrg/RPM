@@ -138,7 +138,10 @@ static char *doUntar(rpmSpec spec, uint32_t c, int quietly, StringBuf after_setu
     char *fn = NULL;
     char *buf = NULL;
     char *tar = NULL;
-    const char *taropts = ((rpmIsVerbose() && !quietly) ? "-xvvf" : "-xf");
+    char taropts[8];
+    char *t;
+    char *rubygemopts = NULL;
+    int rubygem = 0;
     struct Source *sp;
     rpmCompressedMagic compressed = COMPRESSED_NOT;
 
@@ -162,6 +165,25 @@ static char *doUntar(rpmSpec spec, uint32_t c, int quietly, StringBuf after_setu
     }
 
     fn = rpmGetPath("%{_sourcedir}/", sp->source, NULL);
+
+     t = strrchr(sp->source, '.');
+     if(t && !strcasecmp(t, ".gem"))
+        rubygem = 1;
+ 
+     t = stpcpy(taropts, "-x");
+     if(rpmIsVerbose() && !quietly)
+        t = stpcpy(t, "vv");
+     if(rubygem)
+        t = stpcpy(t, "m");
+     t = stpcpy(t, "f");
+
+     if (rubygem) {
+	 rasprintf(&rubygemopts,
+		 "\n"
+		 "if [ -f data.tar.gz ]; then\n"
+		 "  tar %s data.tar.gz\n"
+		 "fi", taropts);
+     }
 
     /* XXX On non-build parse's, file cannot be stat'd or read */
     if (!(spec->flags & RPMSPEC_FORCE) && (rpmFileIsCompressed(fn, &compressed) || checkOwners(fn))) {
@@ -209,7 +231,7 @@ static char *doUntar(rpmSpec spec, uint32_t c, int quietly, StringBuf after_setu
 		"STATUS=$?\n"
 		"if [ $STATUS -ne 0 ]; then\n"
 		"  exit $STATUS\n"
-		"fi", zipper, fn, tar, taropts);
+		"fi%s", zipper, fn, tar, taropts, rubygem ? rubygemopts : "");
 	} else {
 	    rasprintf(&buf, "%s '%s'\n"
 		"STATUS=$?\n"
@@ -219,7 +241,7 @@ static char *doUntar(rpmSpec spec, uint32_t c, int quietly, StringBuf after_setu
 	}
 	free(zipper);
     } else {
-	rasprintf(&buf, "%s %s %s", tar, taropts, fn);
+	rasprintf(&buf, "%s %s %s%s", tar, taropts, fn, rubygem ? rubygemopts : "");
     }
 
 exit:
@@ -328,6 +350,20 @@ static int doSetupMacro(rpmSpec spec, const char *line)
 	rasprintf(&buf, "rm -rf '%s'", spec->buildSubdir);
 	appendLineStringBuf(spec->prep, buf);
 	free(buf);
+    }
+
+    /* check if source is a ruby gem */
+    {   struct Source *sp;
+       for (sp = spec->sources; sp != NULL; sp = sp->next) {
+           if ((sp->flags & RPMBUILD_ISSOURCE) && (sp->num == 0)) {
+               break;
+           }
+       }
+       if (sp != NULL) {
+           char *t = strrchr(sp->source, '.');
+           if(t && !strcasecmp(t, ".gem"))
+               createDir = 1;
+       }
     }
 
     /* if necessary, create and cd into the proper dir */
