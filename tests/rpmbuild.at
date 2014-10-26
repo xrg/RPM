@@ -133,6 +133,11 @@ RPMDB_INIT
 rm -rf ${TOPDIR}
 
 runroot rpmbuild \
+  -bb --quiet /data/SPECS/sh.spec
+
+runroot rpm -i "${TOPDIR}"/RPMS/noarch/sh-1.0-1.noarch.rpm
+
+runroot rpmbuild \
   -bb --quiet /data/SPECS/hlinktest.spec
 
 runroot rpm -i "${TOPDIR}"/RPMS/noarch/hlinktest-1.0-1.noarch.rpm

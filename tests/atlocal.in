@@ -24,11 +24,21 @@ RPM_XFAIL=${RPM_XFAIL-1}
 
 function run()
 {
+    TOPDIR="${RPMTEST}/build"
+    RPM_CONFIGDIR="${RPMTEST}/@RPMCONFIGDIR@"
+    RPM_POPTEXEC_PATH="${RPMTEST}/@usrbindir@"
+    HOME="${RPMTEST}"
+    export TOPDIR RPM_CONFIGDIR HOME RPM_POPTEXEC_PATH
     "$@" --define "_tmppath ${RPMTEST}/tmp" --define "_topdir ${TOPDIR}" --dbpath="${RPMTEST}/var/lib/rpm/"
 }
 
 function runroot()
 {
+    TOPDIR="/build"
+    RPM_CONFIGDIR="/@RPMCONFIGDIR@"
+    RPM_POPTEXEC_PATH="/@usrbindir@"
+    HOME="/"
+    export TOPDIR RPM_CONFIGDIR HOME RPM_POPTEXEC_PATH
     (cd ${RPMTEST} && \
      MAGIC="/magic/magic" FAKECHROOT_BASE="${RPMTEST}" fakechroot "$@" --define "_topdir /build"
     )
