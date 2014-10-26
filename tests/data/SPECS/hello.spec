@@ -1,3 +1,5 @@
+%define debug_package_and_restore %{nil}
+
 Summary: hello -- hello, world rpm
 Name: hello
 Version: 1.0

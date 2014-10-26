@@ -108,7 +108,7 @@ testing$(bindir)/rpmbuild: ../rpmbuild
 	ln -s ../$(bindir) testing/usr/bin
 	for prog in gzip cat patch tar sh ln chmod rm mkdir uname grep sed find file mktemp cut sort diff touch; do p=`which $${prog}`; ln -s $${p} testing/$${p}; done
 	for d in /proc /sys /selinux /etc/selinux; do if [ -d $${d} ]; then ln -s $${d} testing/$${d}; fi; done
-	(cd testing/magic && file -C)
+	cp /usr/share/misc/magic.mgc testing/magic/ || (cd testing/magic && file -C)
 
 check_DATA = atconfig atlocal $(TESTSUITE)
 check_DATA += testing$(bindir)/rpmbuild
