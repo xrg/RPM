@@ -23,10 +23,6 @@
 %define _localstatedir /var
 %define _infodir %_datadir/info
 
-%if %{?apply_patches:0}%{?!apply_patches:1}
-%define apply_patches %(for p in `grep '^Patch.*:' "%{_specdir}/rpm.spec" | cut -d':' -f2-`; do echo "patch -p1 -F0 -i %{_sourcedir}/$p"; done )
-%endif
-
 # Define directory which holds rpm config files, and some binaries actually
 # NOTE: it remains */lib even on lib64 platforms as only one version
 #       of rpm is supported anyway, per architecture
@@ -55,10 +51,6 @@
 %define __find_requires %{rpmdir}/%{_real_vendor}/find-requires %{?buildroot:%{buildroot}} %{?_target_cpu:%{_target_cpu}}
 %define __find_provides %{rpmdir}/%{_real_vendor}/find-provides
 
-#define snapver		rc2
-%define rpmversion	4.11.1
-%define srcver          %{rpmversion}%{?snapver:-%{snapver}}
-%define libver		4.10
 %define libmajor	3
 %define libmajorsign    1
 %define librpmname      %mklibname rpm  %{libmajor}
@@ -88,110 +80,6 @@ Group:		System/Packaging
 Source:		%git_bs_source %{name}-%{version}.tar.gz
 Source1:	%{name}-gitrpm.version
 Source2:	%{name}-changelog.gitrpm.txt
-# Add some undocumented feature to gendiff
-# Send upstream ? drop ?
-
-# if %post of foo-2 fails,
-# or if %preun of foo-1 fails,
-# or if %postun of foo-1 fails,
-# => foo-1 is not removed, so we end up with both packages in rpmdb
-# this patch makes rpm ignore the error in those cases
-# failing %pre must still make the rpm install fail (mdv #23677)
-#
-# (nb: the exit code for pretrans/posttrans & trigger/triggerun/triggerpostun
-#       scripts is ignored with or without this patch)
-# Needed for urpmi testsuite:
-
-# (fredl) add loging facilities through syslog (pushed upstream, might be replaced by a rpm pluging in 4.11):
-
-# - force /usr/lib/rpm/mageia/rpmrc instead of /usr/lib/rpm/<vendor>/rpmrc
-# - read /usr/lib/rpm/mageia/rpmpopt (not only /usr/lib/rpm/rpmpopt)
-# if we deprecated the use of rpm -ba , ...,  we can get rid of this patch
-
-# In original rpm, -bb --short-circuit does not work and run all stage
-# From popular request, we allow to do this
-# http://qa.mandriva.com/show_bug.cgi?id=15896
-
-# don't conflict for doc files
-# (to be able to install lib*-devel together with lib64*-devel even if they have conflicting manpages)
-
-# Fix http://qa.mandriva.com/show_bug.cgi?id=19392
-# (is this working??)
-
-# Fix diff issue when buildroot contains some "//"
-
-# [Dec 2008] macrofiles from rpmrc does not overrides MACROFILES anymore
-# Upstream 4.11 will have /usr/lib/rpm/macros.d:
-
-# [pixel] without this patch, "rpm -e" or "rpm -U" will need to stat(2) every dirnames of
-# files from the package (eg COPYING) in the db. This is quite costly when not in cache 
-# (eg on a test here: >300 stats, and so 3 seconds after a "echo 3 > /proc/sys/vm/drop_caches")
-# this breaks urpmi test case test_rpm_i_fail('gd') in superuser--file-conflicts.t,
-# but this is bad design anyway
-#Patch124: rpm-4.6.0-rc1-speedup-by-not-checking-same-files-with-different-paths-through-symlink.patch
-
-# [from SuSE] handle "Suggests" via RPMTAG_SUGGESTSNAME
-
-# (from Turbolinux) remove a wrong check in case %_topdir is /RPM (ie when it is short)
-# Panu said: "To my knowledge this is a true technical limitation of the
-# implementation: as long as debugedit can just overwrite data in the elf
-# sections things keep relatively easy, but if dest_dir is longer than the
-# original directory, debugedit would have to expand the whole elf file. Which
-# might be technically possible but debugedit currently does not even try to."
-
-# without this patch, "#%define foo bar" is surprisingly equivalent to "%define foo bar"
-# with this patch, "#%define foo bar" is a fatal error
-# Bug still valid => Send upstream for review.
-
-# cf http://wiki.mandriva.com/en/Rpm_filetriggers
-# Will be allowed to be dropped when "Collection" won't be experimental anymore.
-
-# add two fatal errors (during package build)
-# Useful ? to drop ?
-#Patch147: rpm-rpmbuild-check-useless-tags-in-non-existant-binary-packages.patch
-
-# (nb: see the patch for more info about this issue)
-#Patch151: rpm-4.6.0-rc1-protect-against-non-robust-futex.patch
-
-#Patch158: introduce-_patch-and-allow-easy-override-when-the-p.patch
-
-
-# Prevents $DOCDIR from being wiped out when using %%doc <fileinbuilddir>,
-# as this breaks stuff that installs files to $DOCDIR during %%install
-#Patch1008: rpm-4.6.0-rc3-no_rm_-rf_DOCDIR.patch
-
-# Fedora patches
-
-# Turbolinux patches
-# Crusoe CPUs say that their CPU family is "5" but they have enough features for i686.
-
-
-# (tv) fix tests:
-
-
-# when using fakechroot, make sure that testsuite pathes are against /
-# and not full path
-#
-# Fedora patches
-# Patches 41xx are already in upstream and are 1xx in FC
-#
-# (tv) Temporary Patch to provide support for updates (FC):
-# (tv) Compressed debuginfo support (UPSTREAM):
-# (tv) Mini debuginfo support (UPSTREAM):
-
-# (tv) merge mga stuff from rpm-setup:
-# (cg) fix debuginfo extraction. Sometimes, depending on local setup, the
-# extraction of debuginfo can fail. This happens if you have a shared build dir
-# which contains lots of subfolders for different packages (i.e. the default
-# you would get if you rpm -i lots of srpms and build a whole bunch of them)
-# This fix simply uses the real build dir passed in as an argument to the script
-# rather than the top level %_builddir definition (aka $RPM_BUILD_DIR).
-# (cg) This messes up the debuginfo packages themselves due to bad paths.
-# I suspect the real problem lies in the debugedit binary which I will debug further.
-# Leaving this here so I don't forget (aka it annoys tv enough to bug me if it's
-# still here after any reasonable length of time!)
-#Patch4007: rpm-4.11.1-fix-debuginfo-extraction.patch
-# (lm) Don't uselessly bytecompile .py in docdir
 
 License:	GPLv2+
 BuildRequires:	autoconf
