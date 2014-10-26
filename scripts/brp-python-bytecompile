@@ -60,14 +60,14 @@ done
 # implementation:
 
 # Generate normal (.pyc) byte-compiled files.
-$default_python -c 'import compileall, re, sys; sys.exit (not compileall.compile_dir("'"$RPM_BUILD_ROOT"'", '"$depth"', "/", 1, re.compile(r"'"/bin/|/sbin/|/usr/lib(64)?/python[0-9]\.[0-9]"'"), quiet=1))'
+$default_python -c 'import compileall, re, sys; sys.exit (not compileall.compile_dir("'"$RPM_BUILD_ROOT"'", '"$depth"', "/", 1, re.compile(r"'"/bin/|/sbin/|/usr/lib(64)?/python[0-9]\.[0-9]|/usr/share/doc"'"), quiet=1))'
 if [ $? -ne 0 -a 0$errors_terminate -ne 0 ]; then
 	# One or more of the files had a syntax error
 	exit 1
 fi
 
 # Generate optimized (.pyo) byte-compiled files.
-$default_python -O -c 'import compileall, re, sys; sys.exit(not compileall.compile_dir("'"$RPM_BUILD_ROOT"'", '"$depth"', "/", 1, re.compile(r"'"/bin/|/sbin/|/usr/lib(64)?/python[0-9]\.[0-9]"'"), quiet=1))' > /dev/null
+$default_python -O -c 'import compileall, re, sys; sys.exit(not compileall.compile_dir("'"$RPM_BUILD_ROOT"'", '"$depth"', "/", 1, re.compile(r"'"/bin/|/sbin/|/usr/lib(64)?/python[0-9]\.[0-9]|/usr/share/doc"'"), quiet=1))' > /dev/null
 if [ $? -ne 0 -a 0$errors_terminate -ne 0 ]; then
 	# One or more of the files had a syntax error
 	exit 1
