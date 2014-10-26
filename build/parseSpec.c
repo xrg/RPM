@@ -140,6 +140,24 @@ static OFI_t * popOFI(rpmSpec spec)
     return spec->fileStack;
 }
 
+static int begins_with(const char *s, const char *prefix)
+{
+  return strncmp(s, prefix, strlen(prefix)) == 0;
+}
+
+static int isCommentedDefine(const char *line)
+{
+    const char *p = line;
+
+    SKIPSPACE(p);
+    if (*p++ == '#') {
+        SKIPSPACE(p);
+       if (begins_with(p, "%define") &&
+           isspace(p[strlen("%define")])) return 1;
+    }
+    return 0;
+}
+
 static int restoreFirstChar(rpmSpec spec)
 {
     /* Restore 1st char in (possible) next line */
@@ -170,6 +188,11 @@ static int copyNextLineFromOFI(rpmSpec spec, OFI_t *ofi)
 	}
 	spec->lbuf[spec->lbufOff] = '\0';
 	ofi->readPtr = from;
+
+	if (isCommentedDefine(spec->lbuf)) {
+	    rpmlog(RPMLOG_ERR, _("%s:%d: #%%define is forbidden, use #define to comment a %%define\n"), ofi->fileName, ofi->lineNum);
+	    return -1;
+	}
 
 	/* Check if we need another line before expanding the buffer. */
 	for (const char *p = spec->lbuf; *p; p++) {
