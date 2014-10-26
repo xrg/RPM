@@ -343,6 +343,8 @@ static struct tokenBits_s const installScriptBits[] = {
     { "verify",		RPMSENSE_SCRIPT_VERIFY },
     { "pretrans",	RPMSENSE_PRETRANS },
     { "posttrans",	RPMSENSE_POSTTRANS },
+    { "hint", 		RPMSENSE_MISSINGOK },
+    { "strong", 	RPMSENSE_STRONG },
     { NULL, 0 }
 };
 
@@ -797,6 +799,18 @@ static rpmRC handlePreambleTag(rpmSpec spec, Package pkg, rpmTagVal tag,
 	if (parseRCPOT(spec, spec->sourcePackage, field, tag, 0, tagflags))
 	    goto exit;
 	break;
+    case RPMTAG_SUGGESTSFLAGS:
+    case RPMTAG_ENHANCESFLAGS:
+    case RPMTAG_BUILDSUGGESTS:
+    case RPMTAG_BUILDENHANCES:
+	tagflags = RPMSENSE_MISSINGOK;
+	if (macro && (!strcmp(macro, "recommends") || !strcmp(macro, "buildrecommends")))
+	    tagflags |= RPMSENSE_STRONG;
+	if (macro && (!strcmp(macro, "supplements") || !strcmp(macro, "buildsupplements")))
+	    tagflags |= RPMSENSE_STRONG;
+	if ((rc = parseRCPOT(spec, pkg, field, tag, 0, tagflags)))
+	    return rc;
+	break;
     case RPMTAG_EXCLUDEARCH:
     case RPMTAG_EXCLUSIVEARCH:
     case RPMTAG_EXCLUDEOS:
@@ -905,6 +919,14 @@ static struct PreambleRec_s const preambleList[] = {
     {RPMTAG_BUGURL,		0, 0, LEN_AND_STR("bugurl")},
     {RPMTAG_COLLECTIONS,	0, 0, LEN_AND_STR("collections")},
     {RPMTAG_ORDERFLAGS,		2, 0, LEN_AND_STR("orderwithrequires")},
+    {RPMTAG_SUGGESTSFLAGS,	0, 0, LEN_AND_STR("recommends")},
+    {RPMTAG_SUGGESTSFLAGS,	0, 0, LEN_AND_STR("suggests")},
+    {RPMTAG_ENHANCESFLAGS,	0, 0, LEN_AND_STR("supplements")},
+    {RPMTAG_ENHANCESFLAGS,	0, 0, LEN_AND_STR("enhances")},
+    {RPMTAG_BUILDSUGGESTS,	0, 0, LEN_AND_STR("buildrecommends")},
+    {RPMTAG_BUILDSUGGESTS,	0, 0, LEN_AND_STR("buildsuggests")},
+    {RPMTAG_BUILDENHANCES,	0, 0, LEN_AND_STR("buildsupplements")},
+    {RPMTAG_BUILDENHANCES,	0, 0, LEN_AND_STR("buildenhances")},
     {0, 0, 0, 0}
 };
 

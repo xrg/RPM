@@ -70,6 +70,14 @@ static int dsType(rpmTagVal tag,
 	t = "Trigger";
 	evr = RPMTAG_TRIGGERVERSION;
 	f = RPMTAG_TRIGGERFLAGS;
+    } else if (tag == RPMTAG_ENHANCESNAME) {
+	t = "Enhances";
+	evr = RPMTAG_ENHANCESVERSION;
+	f = RPMTAG_ENHANCESFLAGS;
+    } else if (tag == RPMTAG_SUGGESTSNAME) {
+	t = "Suggests";
+	evr = RPMTAG_SUGGESTSVERSION;
+	f = RPMTAG_SUGGESTSFLAGS;
     } else {
 	rc = 1;
     } 

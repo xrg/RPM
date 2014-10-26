@@ -102,6 +102,18 @@ rpmRC parseRCPOT(rpmSpec spec, Package pkg, const char *field, rpmTagVal tagN,
     case RPMTAG_BUILDCONFLICTS:
 	nametag = RPMTAG_CONFLICTNAME;
 	break;
+    case RPMTAG_SUGGESTSFLAGS:
+	nametag = RPMTAG_SUGGESTSNAME;
+	break;
+    case RPMTAG_ENHANCESFLAGS:
+	nametag = RPMTAG_ENHANCESNAME;
+	break;
+    case RPMTAG_BUILDSUGGESTS:
+	nametag = RPMTAG_SUGGESTSNAME;
+	break;
+    case RPMTAG_BUILDENHANCES:
+	nametag = RPMTAG_ENHANCESNAME;
+	break;
     }
 
     for (r = field; *r != '\0'; r = re) {

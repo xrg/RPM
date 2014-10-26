@@ -486,6 +486,19 @@ static char * depflagsFormat(rpmtd td)
     return val;
 }
 
+static char * depflag_strongFormat(rpmtd td)
+{
+    char * val = NULL;
+
+    if (rpmtdClass(td) != RPM_NUMERIC_CLASS) {
+	val = xstrdup(_("(not a number)"));
+    } else {
+	uint64_t anint = rpmtdGetNumber(td);
+	val = xstrdup(anint & RPMSENSE_STRONG ? "strong" : "");
+    }
+    return val;
+}
+
 /**
  * Return tag container array size.
  * @param td		tag data container
@@ -591,6 +604,7 @@ static const struct headerFormatFunc_s rpmHeaderFormats[] = {
     { RPMTD_FORMAT_VFLAGS,	"vflags",	vflagsFormat },
     { RPMTD_FORMAT_EXPAND,	"expand",	expandFormat },
     { RPMTD_FORMAT_FSTATUS,	"fstatus",	fstatusFormat },
+    { RPMTD_FORMAT_DEPFLAG_STRONG,	"depflag_strong",	depflag_strongFormat },
     { -1,			NULL, 		NULL }
 };
 
