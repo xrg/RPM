@@ -405,6 +405,7 @@ fi
 %exclude %{rpmdir}/platform/alpha*-%{_os}/macros
 %exclude %{rpmdir}/platform/sparc*-%{_os}/macros
 %exclude %{rpmdir}/platform/ia64*-%{_os}/macros
+%exclude %{rpmdir}/platform/m68k*-%{_os}/macros
 %exclude %{rpmdir}/platform/ppc*-%{_os}/macros
 %exclude %{rpmdir}/platform/s390*-%{_os}/macros
 %exclude %{rpmdir}/platform/sh*-%{_os}/macros
@@ -458,6 +459,7 @@ fi
 %rpmattr	%{_prefix}/lib/rpm/find-lang.sh
 %rpmattr	%{_prefix}/lib/rpm/find-provides
 %rpmattr	%{_prefix}/lib/rpm/find-requires
+%rpmattr    %{_prefix}/lib/rpm/appdata.prov
 %rpmattr	%{_prefix}/lib/rpm/fontconfig.prov
 %rpmattr	%{_prefix}/lib/rpm/perldeps.pl
 %rpmattr	%{_prefix}/lib/rpm/perl.prov
