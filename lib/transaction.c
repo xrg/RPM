@@ -1541,6 +1541,9 @@ int rpmtsRun(rpmts ts, rpmps okProbs, rpmprobFilterFlags ignoreSet)
 
     /* Run post-transaction scripts unless disabled */
     if (!(rpmtsFlags(ts) & (RPMTRANS_FLAG_NOPOST))) {
+       if ((rpmtsFlags(ts) & _noTransTriggers) != _noTransTriggers) {
+           rpmRunFileTriggers(rpmtsRootDir(ts));
+       }
 	rpmlog(RPMLOG_DEBUG, "running post-transaction scripts\n");
 	runTransScripts(ts, PKG_POSTTRANS);
     }

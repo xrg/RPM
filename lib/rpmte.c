@@ -19,6 +19,7 @@
 #include "lib/rpmfi_internal.h"
 #include "lib/rpmds_internal.h"
 #include "lib/rpmts_internal.h"
+#include "lib/misc.h"
 
 #include "debug.h"
 
@@ -960,6 +961,11 @@ int rpmteProcess(rpmte te, pkgGoal goal)
 
     if (rpmteOpen(te, reset_fi)) {
 	failed = rpmpsmRun(te->ts, te, goal);
+	if (!failed && !test) {
+	    int install_or_erase = (rpmteType(te) == TR_ADDED) ? 1 : 0;
+	    mayAddToFilesAwaitingFiletriggers(rpmtsRootDir(te->ts),
+					      rpmteFI(te), install_or_erase);
+	}
 	rpmteClose(te, reset_fi);
     }
     
