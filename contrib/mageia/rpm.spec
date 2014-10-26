@@ -1,3 +1,6 @@
+%define git_repo rpm
+%define git_head HEAD
+
 %define lib64arches	x86_64 
 %define lib64oses	linux
 
@@ -58,7 +61,6 @@
 %define libver		4.10
 %define libmajor	3
 %define libmajorsign    1
-%define release		%mkrel %{?snapver:0.%{snapver}.}8
 %define librpmname      %mklibname rpm  %{libmajor}
 %define librpmnamedevel %mklibname -d rpm
 %define librpmsign      %mklibname rpmsign %{libmajor}
@@ -80,13 +82,14 @@
 Summary:	The RPM package management system
 Name:		rpm
 Epoch:		1
-Version:        %{rpmversion}
-Release:	%{release}
+Version:	%git_get_ver
+Release:	%mkrel %git_get_rel2
 Group:		System/Packaging
-Source:		http://www.rpm.org/releases/rpm-%{libver}.x/rpm-%{srcver}.tar.bz2
+Source:		%git_bs_source %{name}-%{version}.tar.gz
+Source1:	%{name}-gitrpm.version
+Source2:	%{name}-changelog.gitrpm.txt
 # Add some undocumented feature to gendiff
 # Send upstream ? drop ?
-Patch17:	rpm-4.4.2.2-gendiff-improved.patch
 
 # if %post of foo-2 fails,
 # or if %preun of foo-1 fails,
@@ -98,35 +101,27 @@ Patch17:	rpm-4.4.2.2-gendiff-improved.patch
 # (nb: the exit code for pretrans/posttrans & trigger/triggerun/triggerpostun
 #       scripts is ignored with or without this patch)
 # Needed for urpmi testsuite:
-Patch22:        rpm-4.9.0-non-pre-scripts-dont-fail.patch
 
 # (fredl) add loging facilities through syslog (pushed upstream, might be replaced by a rpm pluging in 4.11):
-Patch31:	rpm-4.9.0-syslog.patch
 
 # - force /usr/lib/rpm/mageia/rpmrc instead of /usr/lib/rpm/<vendor>/rpmrc
 # - read /usr/lib/rpm/mageia/rpmpopt (not only /usr/lib/rpm/rpmpopt)
 # if we deprecated the use of rpm -ba , ...,  we can get rid of this patch
-Patch64:    rpm-4.9.1.1-mageia-rpmrc-rpmpopt.patch
 
 # In original rpm, -bb --short-circuit does not work and run all stage
 # From popular request, we allow to do this
 # http://qa.mandriva.com/show_bug.cgi?id=15896
-Patch70:	rpm-4.9.1-bb-shortcircuit.patch
 
 # don't conflict for doc files
 # (to be able to install lib*-devel together with lib64*-devel even if they have conflicting manpages)
-Patch83: rpm-4.11.0-no-doc-conflicts.patch
 
 # Fix http://qa.mandriva.com/show_bug.cgi?id=19392
 # (is this working??)
-Patch84: rpm-4.4.2.2-rpmqv-ghost.patch
 
 # Fix diff issue when buildroot contains some "//"
-Patch111: rpm-check-file-trim-double-slash-in-buildroot.patch
 
 # [Dec 2008] macrofiles from rpmrc does not overrides MACROFILES anymore
 # Upstream 4.11 will have /usr/lib/rpm/macros.d:
-Patch114: rpm-4.9.0-read-macros_d-dot-macros.patch
 
 # [pixel] without this patch, "rpm -e" or "rpm -U" will need to stat(2) every dirnames of
 # files from the package (eg COPYING) in the db. This is quite costly when not in cache 
@@ -136,8 +131,6 @@ Patch114: rpm-4.9.0-read-macros_d-dot-macros.patch
 #Patch124: rpm-4.6.0-rc1-speedup-by-not-checking-same-files-with-different-paths-through-symlink.patch
 
 # [from SuSE] handle "Suggests" via RPMTAG_SUGGESTSNAME
-Patch133: rpm-4.11.1-weakdeps.patch
-Patch134: extcond.diff
 
 # (from Turbolinux) remove a wrong check in case %_topdir is /RPM (ie when it is short)
 # Panu said: "To my knowledge this is a true technical limitation of the
@@ -145,16 +138,13 @@ Patch134: extcond.diff
 # sections things keep relatively easy, but if dest_dir is longer than the
 # original directory, debugedit would have to expand the whole elf file. Which
 # might be technically possible but debugedit currently does not even try to."
-Patch135: rpm-4.9.0-fix-debugedit.patch
 
 # without this patch, "#%define foo bar" is surprisingly equivalent to "%define foo bar"
 # with this patch, "#%define foo bar" is a fatal error
 # Bug still valid => Send upstream for review.
-Patch145: rpm-forbid-badly-commented-define-in-spec.patch
 
 # cf http://wiki.mandriva.com/en/Rpm_filetriggers
 # Will be allowed to be dropped when "Collection" won't be experimental anymore.
-Patch146: rpm-4.11.1-filetriggers.patch
 
 # add two fatal errors (during package build)
 # Useful ? to drop ?
@@ -163,11 +153,8 @@ Patch146: rpm-4.11.1-filetriggers.patch
 # (nb: see the patch for more info about this issue)
 #Patch151: rpm-4.6.0-rc1-protect-against-non-robust-futex.patch
 
-Patch157: rpm-4.10.1-introduce-_after_setup-which-is-called-after-setup.patch
 #Patch158: introduce-_patch-and-allow-easy-override-when-the-p.patch
-Patch159: introduce-apply_patches-and-lua-var-patches_num.patch
 
-Patch1007: rpm-4.6.0-rc3-xz-support.patch
 
 # Prevents $DOCDIR from being wiped out when using %%doc <fileinbuilddir>,
 # as this breaks stuff that installs files to $DOCDIR during %%install
@@ -177,34 +164,22 @@ Patch1007: rpm-4.6.0-rc3-xz-support.patch
 
 # Turbolinux patches
 # Crusoe CPUs say that their CPU family is "5" but they have enough features for i686.
-Patch2003: rpm-4.4.2.3-rc1-transmeta-crusoe-is-686.patch
 
-Patch2006: rpm-4.10.0-setup-rubygems.patch
 
 # (tv) fix tests:
-Patch2100: rpm-4.11.1-fix-testsuite.diff
 
-Patch3000: mips_macros.patch
-Patch3002: mips_define_isa_macros.patch
-Patch3003: rpm_arm_mips_isa_macros.patch
-Patch3004: rpm_add_armv5tl.patch
 
 # when using fakechroot, make sure that testsuite pathes are against /
 # and not full path
-Patch3005: rpm-4.11.1-fix-testsuite-pathes.patch
 #
 # Fedora patches
 # Patches 41xx are already in upstream and are 1xx in FC
 #
 # (tv) Temporary Patch to provide support for updates (FC):
-Patch3500: rpm-4.10.90-rpmlib-filesystem-check.patch
 # (tv) Compressed debuginfo support (UPSTREAM):
-Patch3501: rpm-4.10.0-dwz-debuginfo.patch
 # (tv) Mini debuginfo support (UPSTREAM):
-Patch3502: rpm-4.10.0-minidebuginfo.patch
 
 # (tv) merge mga stuff from rpm-setup:
-Patch4000: rpm-4.10.0-find-debuginfo__mga-cfg.diff
 # (cg) fix debuginfo extraction. Sometimes, depending on local setup, the
 # extraction of debuginfo can fail. This happens if you have a shared build dir
 # which contains lots of subfolders for different packages (i.e. the default
@@ -217,7 +192,6 @@ Patch4000: rpm-4.10.0-find-debuginfo__mga-cfg.diff
 # still here after any reasonable length of time!)
 #Patch4007: rpm-4.11.1-fix-debuginfo-extraction.patch
 # (lm) Don't uselessly bytecompile .py in docdir
-Patch4008: rpm-4.11.1-dont-bytecompile-python-in-docdir.patch
 
 License:	GPLv2+
 BuildRequires:	autoconf
@@ -275,7 +249,7 @@ installing, uninstalling, verifying, querying, and updating software packages.
 Each software package consists of an archive of files along with information
 about the package like its version, a description, etc.
 
-%package   -n %librpmbuild
+%package -n %librpmbuild
 Summary:   Libraries for building and signing RPM packages
 Group:     System/Libraries
 Obsoletes: rpm-build-libs%{_isa} < %{version}-%{release}
@@ -285,7 +259,7 @@ Provides: rpm-build-libs%{_isa} = %{version}-%{release}
 This package contains the RPM shared libraries for building and signing
 packages.
 
-%package  -n %librpmsign
+%package -n %librpmsign
 Summary:  Libraries for building and signing RPM packages
 Group:    System/Libraries
 
@@ -370,8 +344,8 @@ programs that will manipulate RPM packages and databases.
 %endif
 
 %prep
-%setup -q -n %name-%srcver
-%apply_patches
+%git_get_source
+%setup -q
 
 %build
 aclocal
