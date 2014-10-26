@@ -129,8 +129,9 @@ strip_to_debug()
   $strip_g && case "$(file -bi "$2")" in
   application/x-sharedlib*) g=-g ;;
   esac
-  eu-strip --remove-comment $r $g -f "$1" "$2" || exit
-  chmod 444 "$1" || exit
+  [ -n "$EXCLUDE_FULL_REGEXP" ] && grep -E -q "$EXCLUDE_FULL_REGEXP" <<< "$2" && g=-g
+  eu-strip --remove-comment $r $g $([ -n "$DISABLE_DEBUG" ] || echo -f "$1") "$2" || exit
+  [ -n "$DISABLE_DEBUG" ] || chmod 444 "$1" || exit
 }
 
 add_minidebug()
@@ -255,6 +256,12 @@ set -o pipefail
 strict_error=ERROR
 $strict || strict_error=WARNING
 
+[[ -n "$EXCLUDE_FROM_STRIP" ]] && \
+EXCLUDE_REGEXP=`perl -e 'print "(", join("|", @ARGV), ")"' $EXCLUDE_FROM_STRIP`
+[[ -n "$EXCLUDE_FROM_FULL_STRIP" ]] && \
+EXCLUDE_FULL_REGEXP=`perl -e 'print "(", join("|", @ARGV), ")"' $EXCLUDE_FROM_FULL_STRIP`
+
+echo $EXCLUDE_REGEXP
 # Strip ELF binaries
 find "$RPM_BUILD_ROOT" ! -path "${debugdir}/*.debug" -type f \
      		     \( -perm -0100 -or -perm -0010 -or -perm -0001 \) \
@@ -262,6 +269,10 @@ find "$RPM_BUILD_ROOT" ! -path "${debugdir}/*.debug" -type f \
 file -N -f - | sed -n -e 's/^\(.*\):[ 	]*.*ELF.*, not stripped/\1/p' |
 xargs --no-run-if-empty stat -c '%h %D_%i %n' |
 while read nlinks inum f; do
+  [[ -n "$EXCLUDE_REGEXP" ]] && grep -E -q "$EXCLUDE_REGEXP" <<< "$f" && \
+  continue
+  [ -n "$DISABLE_DEBUG" ] && strip_to_debug "" "$f" && continue
+
   get_debugfn "$f"
   [ -f "${debugfn}" ] && continue
 
@@ -379,7 +390,7 @@ fi
 
 if [ -d "${RPM_BUILD_ROOT}/usr/lib" -o -d "${RPM_BUILD_ROOT}/usr/src" ]; then
   ((nout > 0)) ||
-  test ! -d "${RPM_BUILD_ROOT}/usr/lib" ||
+  test ! -d "${RPM_BUILD_ROOT}/usr/lib/debug" ||
   (cd "${RPM_BUILD_ROOT}/usr/lib"; find debug -type d) |
   sed 's,^,%dir /usr/lib/,' >> "$LISTFILE"
 
